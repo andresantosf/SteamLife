@@ -1,0 +1,711 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    /* Cores Steam */
+    --primary-color: #0e1218;
+    --secondary-color: #1b2632;
+    --tertiary-color: #232f3b;
+    --accent-color: #1a9fff;
+    --accent-secondary: #00b8e6;
+    --text-color: #c7d5e0;
+    --text-secondary: #8b95a6;
+    --text-muted: #5a6370;
+    --success-color: #6ba539;
+    --warning-color: #ffd700;
+    --danger-color: #e74c3c;
+    --hover-color: #2a3a4a;
+
+    /* Raridades */
+    --comum: #8b95a6;
+    --incomum: #4d7218;
+    --raro: #1a7cba;
+    --épico: #8847a8;
+    --lendário: #d4af37;
+}
+
+body {
+    font-family: 'Segoe UI', 'Helvetica Neue', sans-serif;
+    background: linear-gradient(180deg, #0a0e12 0%, #0e1218 40%, #1a2a3a 100%);
+    color: var(--text-color);
+    min-height: 100vh;
+    padding: 0;
+}
+
+.main-layout {
+    display: flex;
+    min-height: 100vh;
+}
+
+/* ==================== SIDEBAR ==================== */
+.sidebar {
+    width: 200px;
+    background: #1b2632;
+    border-right: 1px solid #2a3a4a;
+    overflow-y: auto;
+    position: fixed;
+    left: 0;
+    top: 0;
+    height: 100vh;
+    z-index: 100;
+    scrollbar-color: #3a4a5a #1b2632;
+}
+
+.sidebar::-webkit-scrollbar {
+    width: 8px;
+}
+
+.sidebar::-webkit-scrollbar-track {
+    background: #1b2632;
+}
+
+.sidebar::-webkit-scrollbar-thumb {
+    background: #3a4a5a;
+    border-radius: 4px;
+}
+
+.sidebar::-webkit-scrollbar-thumb:hover {
+    background: #4a5a6a;
+}
+
+.sidebar-header {
+    padding: 15px;
+    border-bottom: 1px solid #2a3a4a;
+    background: #232f3b;
+}
+
+.sidebar-header h2 {
+    color: var(--accent-color);
+    font-size: 1.1em;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+}
+
+.areas-nav {
+    padding: 8px 0;
+}
+
+.area-btn {
+    width: 100%;
+    padding: 10px 12px;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s ease;
+    border-left: 3px solid transparent;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9em;
+    margin: 2px 0;
+}
+
+.area-btn:hover {
+    background: var(--hover-color);
+    color: var(--text-color);
+}
+
+.area-btn.active {
+    background: #2a3a4a;
+    border-left-color: var(--accent-color);
+    color: var(--accent-color);
+    font-weight: 600;
+}
+
+.area-btn .area-icon {
+    font-size: 1.2em;
+    flex-shrink: 0;
+}
+
+.area-btn .area-info {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+}
+
+.area-name {
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.area-count {
+    font-size: 0.75em;
+    color: var(--text-muted);
+}
+
+.container {
+    flex: 1;
+    margin-left: 200px;
+    padding: 0;
+}
+
+/* ==================== HEADER ==================== */
+.header {
+    background: linear-gradient(180deg, #1b2632 0%, #232f3b 100%);
+    border-bottom: 1px solid #2a3a4a;
+    padding: 20px 25px;
+    margin-bottom: 0;
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 30px;
+}
+
+.logo {
+    font-size: 1.8em;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--accent-color), var(--accent-secondary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    letter-spacing: 0.5px;
+}
+
+.header-stats {
+    display: flex;
+    gap: 40px;
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.stat-label {
+    font-size: 0.8em;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.stat-value {
+    font-size: 1.6em;
+    font-weight: 700;
+    color: var(--accent-color);
+}
+
+/* ==================== PROGRESS SECTION ==================== */
+.progress-section {
+    background: linear-gradient(180deg, #232f3b 0%, #1b2632 100%);
+    border-bottom: 1px solid #2a3a4a;
+    padding: 25px;
+    margin-bottom: 0;
+}
+
+.progress-section h2 {
+    margin-bottom: 15px;
+    font-size: 1.2em;
+    color: var(--text-color);
+    font-weight: 600;
+}
+
+.progress-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 12px;
+}
+
+.progress-details {
+    display: flex;
+    gap: 25px;
+    font-size: 0.95em;
+}
+
+.progress-details span:first-child {
+    color: var(--text-secondary);
+}
+
+.progress-details span:last-child {
+    color: var(--success-color);
+    font-weight: 600;
+}
+
+/* Trophy for 100% */
+.progress-details .trophy-icon {
+    margin-left: 10px;
+    font-size: 1.3em;
+    animation: trophy-pulse 0.6s ease-in-out infinite;
+}
+
+@keyframes trophy-pulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.15);
+    }
+}
+
+.progress-bar-container {
+    width: 100%;
+    height: 24px;
+    background: #0a0e12;
+    border-radius: 2px;
+    overflow: hidden;
+    margin-bottom: 15px;
+    border: 1px solid #2a3a4a;
+}
+
+.progress-bar {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, var(--accent-color), var(--accent-secondary));
+    transition: width 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    border-radius: 1px;
+}
+
+.progress-legend {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.85em;
+}
+
+.legend-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 1px;
+}
+
+.legend-color.comum {
+    background-color: var(--comum);
+}
+
+.legend-color.incomum {
+    background-color: var(--incomum);
+}
+
+.legend-color.raro {
+    background-color: var(--raro);
+}
+
+.legend-color.épico {
+    background-color: var(--épico);
+}
+
+.legend-color.lendário {
+    background-color: var(--lendário);
+}
+
+/* ==================== ACHIEVEMENTS SECTION ==================== */
+.achievements-section {
+    background: linear-gradient(180deg, #232f3b 0%, #1b2632 100%);
+    border-bottom: 1px solid #2a3a4a;
+    padding: 25px;
+    margin-bottom: 0;
+}
+
+.achievements-section h2 {
+    margin-bottom: 15px;
+    font-size: 1.2em;
+    color: var(--text-color);
+    font-weight: 600;
+}
+
+.filters {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+}
+
+.filter-btn {
+    padding: 6px 14px;
+    border: 1px solid #2a3a4a;
+    background: #232f3b;
+    color: var(--text-secondary);
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-weight: 500;
+    font-size: 0.9em;
+}
+
+.filter-btn:hover {
+    border-color: var(--accent-color);
+    color: var(--accent-color);
+    background: #2a3a4a;
+}
+
+.filter-btn.active {
+    background: var(--accent-color);
+    border-color: var(--accent-color);
+    color: #0e1218;
+}
+
+.achievements-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 12px;
+}
+
+/* ==================== ACHIEVEMENT CARD ==================== */
+.achievement-card {
+    background: linear-gradient(135deg, #232f3b 0%, #1b2632 100%);
+    border: 1px solid #2a3a4a;
+    border-left: 3px solid;
+    border-radius: 3px;
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.achievement-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(26, 159, 255, 0.05), rgba(0, 184, 230, 0.05));
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    pointer-events: none;
+}
+
+.achievement-card:hover {
+    background: linear-gradient(135deg, #2a3a4a 0%, #232f3b 100%);
+    border-color: var(--accent-color);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(26, 159, 255, 0.15);
+}
+
+.achievement-card:hover::before {
+    opacity: 1;
+}
+
+.achievement-card.comum {
+    border-left-color: var(--comum);
+}
+
+.achievement-card.incomum {
+    border-left-color: var(--incomum);
+}
+
+.achievement-card.raro {
+    border-left-color: var(--raro);
+    position: relative;
+}
+
+.achievement-card.raro::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    animation: shine 3s infinite;
+    pointer-events: none;
+}
+
+.achievement-card.épico {
+    border-left-color: var(--épico);
+    position: relative;
+}
+
+.achievement-card.épico::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.3), transparent);
+    animation: shine 2.5s infinite;
+    pointer-events: none;
+}
+
+.achievement-card.lendário {
+    border-left-color: var(--lendário);
+    position: relative;
+    background: linear-gradient(135deg, #2a2a1b 0%, #1b1a12 100%);
+}
+
+.achievement-card.lendário::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.4), transparent);
+    animation: shine 2s infinite;
+    pointer-events: none;
+}
+
+@keyframes shine {
+    0% {
+        left: -100%;
+    }
+
+    50% {
+        left: 100%;
+    }
+
+    100% {
+        left: 100%;
+    }
+}
+
+.achievement-card.locked {
+    opacity: 0.55;
+}
+
+.achievement-card.locked:hover {
+    opacity: 0.7;
+}
+
+.achievement-icon {
+    font-size: 2.5em;
+    margin-bottom: 12px;
+    filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
+}
+
+.achievement-card.locked .achievement-icon {
+    filter: grayscale(100%) drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
+    opacity: 0.6;
+}
+
+.achievement-name {
+    font-size: 1em;
+    font-weight: 600;
+    margin-bottom: 6px;
+    color: var(--text-color);
+}
+
+.achievement-description {
+    font-size: 0.8em;
+    color: var(--text-secondary);
+    margin-bottom: 12px;
+    line-height: 1.4;
+}
+
+.achievement-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #2a3a4a;
+}
+
+.achievement-points {
+    font-weight: 600;
+    color: var(--warning-color);
+    font-size: 0.9em;
+}
+
+.achievement-status {
+    padding: 3px 10px;
+    border-radius: 2px;
+    font-size: 0.75em;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.achievement-status.unlocked {
+    background: rgba(107, 165, 57, 0.25);
+    color: var(--success-color);
+    border: 1px solid var(--success-color);
+}
+
+.achievement-status.locked {
+    background: rgba(90, 99, 112, 0.25);
+    color: var(--text-muted);
+    border: 1px solid #3a4a5a;
+}
+
+.no-achievements {
+    grid-column: 1 / -1;
+    text-align: center;
+    padding: 50px 20px;
+    color: var(--text-secondary);
+    font-size: 1em;
+}
+
+/* ==================== ACTIONS SECTION ==================== */
+.actions-section {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+    padding: 25px;
+    background: linear-gradient(180deg, #232f3b 0%, #1b2632 100%);
+    border-top: 1px solid #2a3a4a;
+}
+
+.action-btn {
+    padding: 10px 25px;
+    border: 1px solid #2a3a4a;
+    border-radius: 2px;
+    font-size: 0.9em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+}
+
+.unlock-btn {
+    background: linear-gradient(180deg, var(--accent-color), var(--accent-secondary));
+    color: #0e1218;
+    border-color: transparent;
+}
+
+.unlock-btn:hover {
+    transform: scale(1.02);
+    box-shadow: 0 4px 12px rgba(26, 159, 255, 0.25);
+}
+
+.reset-btn {
+    background: linear-gradient(180deg, #c0392b, #a93226);
+    color: white;
+    border-color: transparent;
+}
+
+.reset-btn:hover {
+    transform: scale(1.02);
+    box-shadow: 0 4px 12px rgba(231, 76, 60, 0.25);
+}
+
+/* ==================== TOAST NOTIFICATION ==================== */
+.toast {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background: #1b2632;
+    border: 1px solid var(--accent-color);
+    color: var(--accent-color);
+    padding: 12px 20px;
+    border-radius: 2px;
+    font-weight: 600;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: all 0.3s ease;
+    pointer-events: none;
+    z-index: 1000;
+    font-size: 0.9em;
+}
+
+.toast.show {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+.toast.error {
+    background: #1b2632;
+    border-color: var(--danger-color);
+    color: var(--danger-color);
+}
+
+/* ==================== RESPONSIVE ==================== */
+@media (max-width: 768px) {
+    .sidebar {
+        width: 100%;
+        height: auto;
+        position: static;
+        border-right: none;
+        border-bottom: 1px solid #2a3a4a;
+        max-height: 200px;
+        overflow-y: auto;
+    }
+
+    .main-layout {
+        flex-direction: column;
+    }
+
+    .container {
+        margin-left: 0;
+        padding: 0;
+    }
+
+    .areas-nav {
+        display: flex;
+        overflow-x: auto;
+        padding: 8px 0;
+        gap: 0;
+    }
+
+    .area-btn {
+        flex: 1;
+        min-width: 110px;
+        border-left: none;
+        border-bottom: 2px solid transparent;
+        border-radius: 0;
+        margin: 0;
+    }
+
+    .area-btn.active {
+        border-left: none;
+        border-bottom-color: var(--accent-color);
+    }
+
+    .area-btn:hover {
+        border-left: none;
+    }
+
+    .header-content {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 15px;
+    }
+
+    .header-stats {
+        width: 100%;
+        justify-content: space-around;
+        gap: 20px;
+    }
+
+    .logo {
+        font-size: 1.4em;
+    }
+
+    .achievements-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .progress-details {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 5px;
+    }
+
+    .progress-legend {
+        justify-content: flex-start;
+        gap: 12px;
+    }
+
+    .stat-item {
+        align-items: flex-start;
+    }
+}

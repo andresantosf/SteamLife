@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Steam Life - Conquistas</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="main-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>Áreas</h2>
+            </div>
+            <nav class="areas-nav" id="areasNav">
+                <!-- Áreas serão renderizadas aqui -->
+            </nav>
+        </aside>
+
+        <div class="container">
+            <!-- Header -->
+            <header class="header">
+                <div class="header-content">
+                    <h1 class="logo">🎮 Steam Life</h1>
+                    <div class="header-stats">
+                        <div class="stat-item">
+                            <span class="stat-label">Conquistas Desbloqueadas</span>
+                            <span class="stat-value" id="unlockedCount">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">Pontos Totais</span>
+                            <span class="stat-value" id="totalPoints">0</span>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Progress Bar Section -->
+            <section class="progress-section">
+                <div class="progress-info">
+                    <h2 id="areaTitle">Progresso Geral</h2>
+                    <div class="progress-details">
+                        <span id="progressText">0/0</span>
+                        <span id="progressPercentage">0%</span>
+                    </div>
+                </div>
+                <div class="progress-bar-container">
+                    <div class="progress-bar" id="progressBar"></div>
+                </div>
+                <div class="progress-legend">
+                    <div class="legend-item">
+                        <span class="legend-color comum"></span>
+                        <span>Comum</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color incomum"></span>
+                        <span>Incomum</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color raro"></span>
+                        <span>Raro</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color épico"></span>
+                        <span>Épico</span>
+                    </div>
+                    <div class="legend-item">
+                        <span class="legend-color lendário"></span>
+                        <span>Lendário</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Achievements Section -->
+            <section class="achievements-section">
+                <h2>Suas Conquistas</h2>
+                <div class="filters">
+                    <button class="filter-btn active" data-filter="todas">Todas</button>
+                    <button class="filter-btn" data-filter="desbloqueadas">Desbloqueadas</button>
+                    <button class="filter-btn" data-filter="bloqueadas">Bloqueadas</button>
+                </div>
+
+                <div class="achievements-grid" id="achievementsGrid">
+                    <!-- Conquistas serão renderizadas aqui -->
+                </div>
+            </section>
+
+            <!-- Actions Section -->
+            <section class="actions-section">
+                <button class="action-btn unlock-btn" id="unlockRandomBtn">Desbloquear Conquista Aleatória</button>
+                <button class="action-btn reset-btn" id="resetBtn">Resetar Todas as Conquistas</button>
+            </section>
+        </div>
+    </div>
+
+    <!-- Notification Toast -->
+    <div class="toast" id="toast"></div>
+
+    <script src="script.js"></script>
+</body>
+
+</html>
