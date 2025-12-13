@@ -5,6 +5,7 @@ class AchievementManager {
         this.areas = [];
         this.currentAreaId = null;
         this.currentFilter = 'todas';
+        this.dataVersion = null;
         this.init();
     }
 
@@ -17,30 +18,43 @@ class AchievementManager {
 
     async loadData() {
         try {
+            // Adicionar timestamp para forçar atualização (sem cache)
+            const timestamp = new Date().getTime();
             const [achievementsRes, areasRes] = await Promise.all([
-                fetch('./data/achievements.json'),
-                fetch('./data/areas.json')
+                fetch(`./data/achievements.json?v=${timestamp}`),
+                fetch(`./data/areas.json?v=${timestamp}`)
             ]);
 
             const achievementsData = await achievementsRes.json();
             const areasData = await areasRes.json();
 
-            // Carregar dados salvos do localStorage
+            // Auto-gerar IDs se não existirem ou se estiverem duplicados
+            let achievementsWithIds = this.autoGenerateIds(achievementsData.achievements);
+
+            // Criar um hash dos dados para detectar mudanças
+            const currentHash = JSON.stringify(achievementsWithIds);
+            const savedVersion = localStorage.getItem('dataVersion');
             const savedAchievements = localStorage.getItem('achievements');
 
-            // Se existem dados salvos, verificar se têm areaId (dados novos)
-            if (savedAchievements) {
+            // Se o JSON mudou, limpar localStorage e usar novos dados
+            if (savedVersion !== currentHash) {
+                console.log('JSON foi modificado, atualizando dados...');
+                localStorage.setItem('dataVersion', currentHash);
+                localStorage.removeItem('achievements');
+                this.achievements = achievementsWithIds;
+                this.saveToLocalStorage();
+            } else if (savedAchievements) {
+                // Dados salvos estão atualizados, usar do localStorage
                 const parsed = JSON.parse(savedAchievements);
-                // Verificar se o primeiro item tem areaId, se não, descartar dados antigos
                 if (parsed.length > 0 && parsed[0].areaId !== undefined) {
                     this.achievements = parsed;
                 } else {
-                    // Dados antigos sem areaId, usar novos dados
-                    this.achievements = achievementsData.achievements;
+                    // Dados antigos, usar novos
+                    this.achievements = achievementsWithIds;
                     this.saveToLocalStorage();
                 }
             } else {
-                this.achievements = achievementsData.achievements;
+                this.achievements = achievementsWithIds;
                 this.saveToLocalStorage();
             }
 
@@ -53,6 +67,22 @@ class AchievementManager {
             console.error('Erro ao carregar dados:', error);
             this.showToast('Erro ao carregar dados', true);
         }
+    }
+
+    autoGenerateIds(achievements) {
+        // Verificar se precisamos gerar IDs
+        const hasAllIds = achievements.every((a, index) => a.id === index + 1);
+
+        if (!hasAllIds) {
+            console.log('Gerando IDs automaticamente...');
+            // Atribuir IDs sequenciais
+            return achievements.map((achievement, index) => ({
+                ...achievement,
+                id: index + 1
+            }));
+        }
+
+        return achievements;
     }
 
     saveToLocalStorage() {
@@ -173,6 +203,12 @@ class AchievementManager {
         } else if (this.currentFilter === 'bloqueadas') {
             filtered = filtered.filter(a => !a.unlocked);
         }
+
+        // Ordenar por raridade (comum -> incomum -> raro -> épico -> lendário)
+        const rarityOrder = { comum: 0, incomum: 1, raro: 2, épico: 3, lendário: 4 };
+        filtered.sort((a, b) => {
+            return rarityOrder[a.rarity] - rarityOrder[b.rarity];
+        });
 
         return filtered;
     }

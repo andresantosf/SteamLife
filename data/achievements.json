@@ -1,7 +1,6 @@
 {
     "achievements": [
         {
-            "id": 1,
             "areaId": 1,
             "name": "Primeira Série",
             "description": "Faça seu primeiro treino na academia",
@@ -11,29 +10,18 @@
             "unlocked": false
         },
         {
-            "id": 2,
+            "id": 20,
             "areaId": 1,
-            "name": "Consistência",
-            "description": "Treine por 30 dias consecutivos",
-            "points": 50,
-            "icon": "📅",
-            "rarity": "raro",
+            "name": "Constância Inicial",
+            "description": "Treine por 3 dias seguidos",
+            "points": 15,
+            "icon": "🔥",
+            "rarity": "comum",
             "unlocked": false
         },
         {
-            "id": 3,
             "areaId": 1,
-            "name": "Musculação",
-            "description": "Levante 100kg no supino",
-            "points": 100,
-            "icon": "🏋️",
-            "rarity": "épico",
-            "unlocked": false
-        },
-        {
-            "id": 4,
-            "areaId": 1,
-            "name": "Sem Falhar",
+            "name": "Semana de Ferro",
             "description": "Complete 7 dias seguidos de treino",
             "points": 25,
             "icon": "✅",
@@ -41,37 +29,15 @@
             "unlocked": false
         },
         {
-            "id": 5,
             "areaId": 1,
-            "name": "Projeto Verão",
-            "description": "Complete 60 dias de treino",
-            "points": 75,
-            "icon": "☀️",
-            "rarity": "raro",
-            "unlocked": false
-        },
-        {
-            "id": 6,
-            "areaId": 1,
-            "name": "Monstro do Supino",
-            "description": "Levante 140kg no supino",
-            "points": 150,
-            "icon": "🔥",
-            "rarity": "lendário",
-            "unlocked": false
-        },
-        {
-            "id": 7,
-            "areaId": 1,
-            "name": "Perna em Dia",
-            "description": "Faça treino de pernas 5 vezes",
-            "points": 30,
-            "icon": "🦵",
+            "name": "Primeira Dezena",
+            "description": "Complete 10 treinos e construa o hábito do exercício",
+            "points": 50,
+            "icon": "💪",
             "rarity": "comum",
             "unlocked": false
         },
         {
-            "id": 8,
             "areaId": 1,
             "name": "Sem Desculpas",
             "description": "Treine mesmo em um domingo",
@@ -81,57 +47,85 @@
             "unlocked": false
         },
         {
-            "id": 9,
             "areaId": 1,
-            "name": "Shape Começando",
-            "description": "Complete 10 treinos no total",
-            "points": 25,
-            "icon": "📈",
+            "name": "Coração de Aço",
+            "description": "Complete 10 treinos de cardio",
+            "points": 75,
+            "icon": "💓",
+            "rarity": "incomum",
+            "unlocked": false
+        },
+        {
+            "id": 21,
+            "areaId": 1,
+            "name": "Aquecido",
+            "description": "Faça 10 minutos de aquecimento por 5 treinos seguidos",
+            "points": 20,
+            "icon": "♨️",
             "rarity": "comum",
             "unlocked": false
         },
         {
-            "id": 10,
+            "id": 22,
             "areaId": 1,
-            "name": "Veterano",
-            "description": "Alcance 100 treinos",
-            "points": 120,
-            "icon": "🎖️",
-            "rarity": "épico",
-            "unlocked": false
-        },
-        {
-            "id": 11,
-            "areaId": 1,
-            "name": "No Pain",
-            "description": "Treine 3 dias seguidos mesmo com dor muscular",
-            "points": 35,
-            "icon": "😤",
+            "name": "Full Body",
+            "description": "Treine todos os grupos musculares em uma semana",
+            "points": 50,
+            "icon": "🏋️",
             "rarity": "raro",
             "unlocked": false
         },
         {
-            "id": 12,
+            "id": 23,
             "areaId": 1,
-            "name": "Cardio em Dia",
-            "description": "Complete 10 treinos de cardio",
+            "name": "Sem Desistir",
+            "description": "Finalize um treino mesmo cansado",
             "points": 30,
-            "icon": "❤️",
+            "icon": "💀",
             "rarity": "comum",
             "unlocked": false
         },
         {
-            "id": 13,
+            "id": 24,
             "areaId": 1,
-            "name": "Disciplina Total",
-            "description": "Treine por 90 dias sem pausas longas",
-            "points": 150,
-            "icon": "🧠",
+            "name": "Treino Duplo",
+            "description": "Faça dois treinos no mesmo dia",
+            "points": 70,
+            "icon": "⚡",
+            "rarity": "raro",
+            "unlocked": false
+        },
+        {
+            "id": 26,
+            "areaId": 1,
+            "name": "Primeiro Corte",
+            "description": "Chegue a 10% de gordura corporal",
+            "points": 200,
+            "icon": "✂️",
             "rarity": "lendário",
             "unlocked": false
         },
         {
-            "id": 14,
+            "id": 28,
+            "areaId": 1,
+            "name": "Monstro do Agachamento",
+            "description": "Agache 140kg",
+            "points": 180,
+            "icon": "🦵",
+            "rarity": "épico",
+            "unlocked": false
+        },
+        {
+            "id": 29,
+            "areaId": 1,
+            "name": "Imparável",
+            "description": "Complete 180 dias de treino acumulados",
+            "points": 300,
+            "icon": "👑",
+            "rarity": "lendário",
+            "unlocked": false
+        },
+        {
             "areaId": 1,
             "name": "Madrugador",
             "description": "Treine antes das 7h da manhã",
@@ -141,7 +135,6 @@
             "unlocked": false
         },
         {
-            "id": 15,
             "areaId": 1,
             "name": "Noturno",
             "description": "Treine depois das 22h",
@@ -151,57 +144,6 @@
             "unlocked": false
         },
         {
-            "id": 16,
-            "areaId": 1,
-            "name": "Primeiro PR",
-            "description": "Bata seu primeiro recorde pessoal",
-            "points": 40,
-            "icon": "🚀",
-            "rarity": "raro",
-            "unlocked": false
-        },
-        {
-            "id": 17,
-            "areaId": 1,
-            "name": "Explosão Total",
-            "description": "Faça um treino com mais de 2h de duração",
-            "points": 60,
-            "icon": "💥",
-            "rarity": "raro",
-            "unlocked": false
-        },
-        {
-            "id": 18,
-            "areaId": 1,
-            "name": "Sem Skip Leg Day",
-            "description": "Faça 10 treinos de perna",
-            "points": 70,
-            "icon": "🦿",
-            "rarity": "épico",
-            "unlocked": false
-        },
-        {
-            "id": 19,
-            "areaId": 1,
-            "name": "Foco Absoluto",
-            "description": "Complete 30 treinos sem faltar nenhum",
-            "points": 90,
-            "icon": "🎯",
-            "rarity": "épico",
-            "unlocked": false
-        },
-        {
-            "id": 20,
-            "areaId": 1,
-            "name": "Lenda da Academia",
-            "description": "Complete 365 dias de treino acumulados",
-            "points": 300,
-            "icon": "👑",
-            "rarity": "lendário",
-            "unlocked": false
-        },
-        {
-            "id": 21,
             "areaId": 2,
             "name": "Primeira Classe",
             "description": "Attend sua primeira aula",
@@ -211,27 +153,6 @@
             "unlocked": false
         },
         {
-            "id": 22,
-            "areaId": 2,
-            "name": "Bom Aluno",
-            "description": "Tire nota 10 em uma prova",
-            "points": 40,
-            "icon": "⭐",
-            "rarity": "incomum",
-            "unlocked": false
-        },
-        {
-            "id": 23,
-            "areaId": 2,
-            "name": "Gênio",
-            "description": "Seja o melhor aluno da classe",
-            "points": 75,
-            "icon": "🧠",
-            "rarity": "raro",
-            "unlocked": false
-        },
-        {
-            "id": 24,
             "areaId": 3,
             "name": "Calouro",
             "description": "Inicie sua faculdade",
@@ -241,27 +162,6 @@
             "unlocked": false
         },
         {
-            "id": 25,
-            "areaId": 3,
-            "name": "Formando",
-            "description": "Complete um semestre com excelência",
-            "points": 60,
-            "icon": "📜",
-            "rarity": "raro",
-            "unlocked": false
-        },
-        {
-            "id": 26,
-            "areaId": 3,
-            "name": "Mestre",
-            "description": "Complete seu mestrado",
-            "points": 150,
-            "icon": "👨‍🎓",
-            "rarity": "épico",
-            "unlocked": false
-        },
-        {
-            "id": 27,
             "areaId": 4,
             "name": "Primeiro Dia",
             "description": "Seu primeiro dia de trabalho",
@@ -271,18 +171,25 @@
             "unlocked": false
         },
         {
-            "id": 28,
-            "areaId": 4,
-            "name": "Promoção",
-            "description": "Receba uma promoção",
-            "points": 100,
-            "icon": "📊",
-            "rarity": "épico",
+            "areaId": 1,
+            "name": "Foco Muscular",
+            "description": "Complete 5 exercícios para o mesmo grupo muscular em um único treino!",
+            "points": 75,
+            "icon": "💪",
+            "rarity": "incomum",
             "unlocked": false
         },
         {
-            "id": 29,
-            "areaId": 5,
+            "areaId": 2,
+            "name": "Bom Aluno",
+            "description": "Tire nota 10 em uma prova",
+            "points": 40,
+            "icon": "⭐",
+            "rarity": "incomum",
+            "unlocked": false
+        },
+        {
+            "areaId": 1,
             "name": "Primeira Corrida",
             "description": "Corra 5km sem parar",
             "points": 30,
@@ -291,17 +198,6 @@
             "unlocked": false
         },
         {
-            "id": 30,
-            "areaId": 5,
-            "name": "Resistência",
-            "description": "Corra uma maratona",
-            "points": 120,
-            "icon": "🏅",
-            "rarity": "épico",
-            "unlocked": false
-        },
-        {
-            "id": 31,
             "areaId": 6,
             "name": "Artista",
             "description": "Crie sua primeira obra de arte",
@@ -311,13 +207,156 @@
             "unlocked": false
         },
         {
-            "id": 32,
+            "areaId": 1,
+            "name": "Projeto Verão",
+            "description": "Complete 60 dias de treino",
+            "points": 75,
+            "icon": "☀️",
+            "rarity": "raro",
+            "unlocked": false
+        },
+        {
+            "areaId": 1,
+            "name": "No Pain",
+            "description": "Treine 3 dias seguidos mesmo com dor muscular",
+            "points": 35,
+            "icon": "😤",
+            "rarity": "raro",
+            "unlocked": false
+        },
+        {
+            "areaId": 1,
+            "name": "Primeiro PR",
+            "description": "Bata seu primeiro recorde pessoal",
+            "points": 40,
+            "icon": "🚀",
+            "rarity": "raro",
+            "unlocked": false
+        },
+        {
+            "areaId": 1,
+            "name": "Maratonista do Ferro",
+            "description": "Faça um treino com mais de 2h de duração",
+            "points": 120,
+            "icon": "💪",
+            "rarity": "raro",
+            "unlocked": false
+        },
+        {
+            "areaId": 2,
+            "name": "Gênio",
+            "description": "Seja o melhor aluno da classe",
+            "points": 75,
+            "icon": "🧠",
+            "rarity": "raro",
+            "unlocked": false
+        },
+        {
+            "areaId": 3,
+            "name": "Formando",
+            "description": "Complete um semestre com excelência",
+            "points": 60,
+            "icon": "📜",
+            "rarity": "raro",
+            "unlocked": false
+        },
+        {
             "areaId": 6,
             "name": "Maestro",
             "description": "Toque uma música perfeitamente",
             "points": 80,
             "icon": "🎵",
             "rarity": "raro",
+            "unlocked": false
+        },
+        {
+            "areaId": 1,
+            "name": "Força dos Gigantes",
+            "description": "Levante 50kg no supino",
+            "points": 150,
+            "icon": "💪",
+            "rarity": "raro",
+            "unlocked": false
+        },
+        {
+            "areaId": 1,
+            "name": "Veterano",
+            "description": "Alcance 100 treinos",
+            "points": 120,
+            "icon": "🎖️",
+            "rarity": "épico",
+            "unlocked": false
+        },
+        {
+            "areaId": 1,
+            "name": "Sem Skip Leg Day",
+            "description": "Faça 10 treinos de perna",
+            "points": 70,
+            "icon": "🦿",
+            "rarity": "épico",
+            "unlocked": false
+        },
+        {
+            "areaId": 1,
+            "name": "Maratonista do Hábito",
+            "description": "Complete 30 dias consecutivos de treino sem faltar um único dia.",
+            "points": 200,
+            "icon": "🏃‍♂️",
+            "rarity": "épico",
+            "unlocked": false
+        },
+        {
+            "areaId": 3,
+            "name": "Mestre",
+            "description": "Complete seu mestrado",
+            "points": 150,
+            "icon": "👨‍🎓",
+            "rarity": "épico",
+            "unlocked": false
+        },
+        {
+            "areaId": 4,
+            "name": "Promoção",
+            "description": "Receba uma promoção",
+            "points": 100,
+            "icon": "📊",
+            "rarity": "épico",
+            "unlocked": false
+        },
+        {
+            "areaId": 1,
+            "name": "Resistência",
+            "description": "Corra uma maratona",
+            "points": 120,
+            "icon": "🏅",
+            "rarity": "épico",
+            "unlocked": false
+        },
+        {
+            "areaId": 1,
+            "name": "Monstro do Supino",
+            "description": "Levante 140kg no supino",
+            "points": 150,
+            "icon": "🔥",
+            "rarity": "lendário",
+            "unlocked": false
+        },
+        {
+            "areaId": 1,
+            "name": "Disciplina Total",
+            "description": "Treine por 90 dias sem pausas longas",
+            "points": 150,
+            "icon": "🧠",
+            "rarity": "lendário",
+            "unlocked": false
+        },
+        {
+            "areaId": 1,
+            "name": "Guerreiro Lendário",
+            "description": "Complete 365 dias de treino acumulados",
+            "points": 365,
+            "icon": "💪",
+            "rarity": "lendário",
             "unlocked": false
         }
     ]
