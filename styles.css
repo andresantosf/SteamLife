@@ -238,8 +238,111 @@ body {
 /* Trophy for 100% */
 .progress-details .trophy-icon {
     margin-left: 10px;
-    font-size: 1.3em;
-    animation: trophy-pulse 0.6s ease-in-out infinite;
+}
+
+/* Auth area */
+.auth-area {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.auth-btn {
+    background: transparent;
+    border: 1px solid #2a3a4a;
+    color: var(--text-secondary);
+    padding: 6px 10px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.auth-btn:hover {
+    background: var(--hover-color);
+    color: var(--text-color);
+}
+
+.auth-btn.google {
+    background: #fff;
+    color: #333;
+    border: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.auth-btn.google:before {
+    content: '\f1a0';
+}
+
+.user-email {
+    color: var(--text-secondary);
+    font-size: 0.9em;
+}
+
+.sync-status {
+    color: var(--text-muted);
+    font-size: 0.77em;
+    margin-left: 6px;
+}
+
+/* Modal */
+.modal {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 9999;
+}
+
+.modal.hidden {
+    display: none;
+}
+
+.modal-content {
+    background: #0f1720;
+    border: 1px solid #2a3a4a;
+    padding: 20px;
+    border-radius: 8px;
+    min-width: 300px;
+}
+
+.modal-content label {
+    font-size: 0.85em;
+    display: block;
+    margin-top: 10px;
+    color: var(--text-secondary);
+}
+
+.modal-content input {
+    width: 100%;
+    padding: 8px 10px;
+    margin-top: 6px;
+    background: #0d1318;
+    border: 1px solid #2a3a4a;
+    color: var(--text-color);
+    border-radius: 6px;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    margin-top: 12px;
+}
+
+.action-btn.migrate-btn {
+    background: linear-gradient(90deg, var(--accent-color), var(--accent-secondary));
+    border: none;
+    color: white;
+}
+
+font-size: 1.3em;
+animation: trophy-pulse 0.6s ease-in-out infinite;
 }
 
 @keyframes trophy-pulse {

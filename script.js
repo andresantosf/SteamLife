@@ -6,12 +6,15 @@ class AchievementManager {
         this.currentAreaId = null;
         this.currentFilter = 'todas';
         this.dataVersion = null;
+        this.currentUser = null;
+        this.saveTimeout = null;
         this.init();
     }
 
     async init() {
         await this.loadData();
         this.setupEventListeners();
+        this.setupAuthListeners();
         this.renderAreas();
         this.selectArea(null);
     }
@@ -87,6 +90,11 @@ class AchievementManager {
 
     saveToLocalStorage() {
         localStorage.setItem('achievements', JSON.stringify(this.achievements));
+
+        // Se o usuário estiver logado, gravar no Firestore (com debounce)
+        if (this.currentUser) {
+            this.debouncedSaveToServer(this.currentUser.uid);
+        }
     }
 
     setupEventListeners() {
@@ -112,6 +120,154 @@ class AchievementManager {
                 this.resetAll();
             }
         });
+    }
+
+    setupAuthListeners() {
+        // Elements
+        const loginBtn = document.getElementById('loginBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const userEmailEl = document.getElementById('userEmail');
+        const loginModal = document.getElementById('loginModal');
+        const closeLoginBtn = document.getElementById('closeLoginBtn');
+
+        if (loginBtn) loginBtn.addEventListener('click', () => loginModal.classList.remove('hidden'));
+        if (closeLoginBtn) closeLoginBtn.addEventListener('click', () => loginModal.classList.add('hidden'));
+        if (logoutBtn) logoutBtn.addEventListener('click', async () => {
+            if (window.firebaseService) {
+                await window.firebaseService.signOut();
+            }
+        });
+
+
+
+        // Google sign-in
+        const googleBtn = document.getElementById('googleSignInBtn');
+        if (googleBtn) {
+            googleBtn.addEventListener('click', async () => {
+                try {
+                    await window.firebaseService.signInWithGoogle();
+                    loginModal.classList.add('hidden');
+                    this.showToast('Login com Google bem-sucedido');
+                } catch (error) {
+                    console.error('Erro no login com Google', error);
+                    this.showToast('Erro no login com Google: ' + (error.message || error), true);
+                }
+            });
+        }
+
+        // Migrate button
+        const migrateBtn = document.getElementById('migrateBtn');
+        if (migrateBtn) {
+            migrateBtn.addEventListener('click', async () => {
+                if (!this.currentUser) {
+                    this.showToast('Faça login para migrar seu progresso', true);
+                    return;
+                }
+                const unlockedIds = this.achievements.filter(a => a.unlocked).map(a => a.id);
+                const totalPoints = this.achievements.reduce((sum, a) => sum + (a.unlocked ? a.points : 0), 0);
+                try {
+                    this.updateSyncStatus('Migrando...');
+                    const res = await window.firebaseService.callFunction('importUserProgress', {
+                        uid: this.currentUser.uid,
+                        unlockedIds,
+                        totalPoints,
+                        merge: true
+                    });
+                    if (res && res.success) {
+                        this.updateSyncStatus('Migrado');
+                        this.showToast('Progresso migrado com sucesso!');
+                    } else {
+                        this.updateSyncStatus('Erro');
+                        this.showToast('Ocorreu um erro durante a migração', true);
+                    }
+                } catch (err) {
+                    console.error('Migration error', err);
+                    this.updateSyncStatus('Erro');
+                    this.showToast('Erro ao migrar: ' + (err.message || err), true);
+                }
+            });
+        }
+
+
+
+        // Auth state observer
+        if (window.firebaseService && window.firebaseService.onAuthStateChanged) {
+            window.firebaseService.onAuthStateChanged(user => this.handleAuthStateChange(user));
+        }
+    }
+
+    handleAuthStateChange(user) {
+        this.currentUser = user;
+        const loginBtn = document.getElementById('loginBtn');
+        const logoutBtn = document.getElementById('logoutBtn');
+        const userEmailEl = document.getElementById('userEmail');
+
+        if (user) {
+            if (loginBtn) loginBtn.hidden = true;
+            if (logoutBtn) logoutBtn.hidden = false;
+            if (userEmailEl) userEmailEl.textContent = user.email || '';
+            // Carregar progresso do usuário
+            this.loadUserDataFor(user.uid);
+        } else {
+            if (loginBtn) loginBtn.hidden = false;
+            if (logoutBtn) logoutBtn.hidden = true;
+            if (userEmailEl) userEmailEl.textContent = '';
+            this.updateSyncStatus('Offline');
+        }
+    }
+
+    async loadUserDataFor(uid) {
+        if (!window.firebaseService) return;
+        const remote = await window.firebaseService.loadUserProgress(uid);
+        if (!remote) {
+            // Nenhum progresso remoto: salvar o local atual
+            await this.saveUserProgressToServer(uid);
+            this.updateSyncStatus('Nenhum progresso remoto, salvo localmente');
+        } else {
+            this.mergeRemoteProgress(remote);
+            this.updateSyncStatus('Progresso carregado');
+        }
+    }
+
+    mergeRemoteProgress(remote) {
+        const remoteUnlocked = remote.unlockedIds || [];
+        const localUnlocked = this.achievements.filter(a => a.unlocked).map(a => a.id);
+        const mergedSet = new Set([...remoteUnlocked, ...localUnlocked]);
+
+        this.achievements.forEach(a => {
+            a.unlocked = mergedSet.has(a.id);
+        });
+
+        this.saveToLocalStorage();
+        this.render();
+
+        // Salvar novamente o estado mesclado no servidor
+        if (this.currentUser) {
+            this.saveUserProgressToServer(this.currentUser.uid);
+        }
+    }
+
+    debouncedSaveToServer(uid) {
+        if (this.saveTimeout) clearTimeout(this.saveTimeout);
+        this.saveTimeout = setTimeout(() => {
+            this.saveUserProgressToServer(uid);
+        }, 1000);
+    }
+
+    async saveUserProgressToServer(uid) {
+        if (!window.firebaseService) return;
+
+        const unlockedIds = this.achievements.filter(a => a.unlocked).map(a => a.id);
+        const totalPoints = this.achievements.reduce((sum, a) => sum + (a.unlocked ? a.points : 0), 0);
+        const progress = { unlockedIds, totalPoints, lastUpdated: Date.now() };
+
+        const ok = await window.firebaseService.saveUserProgress(uid, progress);
+        if (!ok) {
+            this.showToast('Erro ao salvar progresso no servidor', true);
+            this.updateSyncStatus('Erro ao salvar', true);
+        } else {
+            this.updateSyncStatus('Sincronizado');
+        }
     }
 
     renderAreas() {
@@ -332,6 +488,17 @@ class AchievementManager {
 
             grid.appendChild(card);
         });
+    }
+
+    updateSyncStatus(msg, isError = false) {
+        const el = document.getElementById('syncStatus');
+        if (!el) return;
+        el.textContent = msg;
+        if (isError) {
+            el.style.color = 'var(--danger-color)';
+        } else {
+            el.style.color = 'var(--text-muted)';
+        }
     }
 
     showToast(message, isError = false) {
