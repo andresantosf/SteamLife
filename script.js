@@ -1305,6 +1305,7 @@ class AchievementManager {
 
             card.innerHTML = `
                 <div class="achievement-icon">${achievement.icon}</div>
+                ${achievement.repeat ? `<div class="achievement-repeat-badge">x${achievement.repeat}</div>` : ''}
                 <h3 class="achievement-name">${achievement.name}</h3>
                 <p class="achievement-description">${achievement.description}</p>
                 <div class="achievement-footer">
