@@ -52,5 +52,20 @@ jobs:
       uses: peaceiris/actions-gh-pages@v3
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ./
+        publish_dir: public/
         cname: # optional: add your custom domain here
+
+    - name: Prepare public folder for publish
+      run: |
+        echo "Preparing public/ folder for deployment"
+        rm -rf public || true
+        mkdir -p public
+        # Copy site files into public (preserve structure)
+        rsync -av --exclude='.git' --exclude='.github' --exclude='node_modules' ./ public/
+        # Ensure generated config is included
+        if [ -f data/firebase-config.js ]; then
+          mkdir -p public/data
+          cp data/firebase-config.js public/data/firebase-config.js
+        fi
+        echo "Public folder size:"
+        du -sh public || true
