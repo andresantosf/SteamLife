@@ -1,0 +1,39 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Public profile collection for searching users
+    match /usersPublic/{userId} {
+      allow read: if request.auth != null;
+      allow create, update: if request.auth != null && request.auth.uid == userId;
+      allow delete: if request.auth != null && request.auth.uid == userId;
+    }
+
+    match /users/{userId} {
+      // Allow owner full read/write
+      allow create: if request.auth != null && request.auth.uid == userId;
+      allow update: if request.auth != null && request.auth.uid == userId;
+      allow delete: if request.auth != null && request.auth.uid == userId;
+
+      // Read allowed if owner or if requester exists in user's friends subcollection
+      allow read: if request.auth != null && (request.auth.uid == userId ||
+        exists(/databases/$(database)/documents/users/$(userId)/friends/$(request.auth.uid)));
+
+      // Subcollection for user's friends
+      match /friends/{friendId} {
+        allow read: if request.auth != null && (request.auth.uid == userId || request.auth.uid == friendId);
+        // Creation should normally be performed by Cloud Function; allow owner to add/remove their own friend doc
+        allow create, delete: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+
+    // Friend requests collection
+    match /friendRequests/{requestId} {
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.fromUid
+        && request.resource.data.toUid is string;
+      allow read: if request.auth != null && (request.auth.uid == resource.data.toUid || request.auth.uid == resource.data.fromUid);
+      allow update: if request.auth != null && (request.auth.uid == resource.data.toUid || request.auth.uid == resource.data.fromUid);
+      allow delete: if request.auth != null && (request.auth.uid == resource.data.toUid || request.auth.uid == resource.data.fromUid);
+    }
+    // Optional: define other collections and rules as necessary.
+  }
+}
