@@ -4,7 +4,11 @@ class AchievementManager {
         this.achievements = [];
         this.areas = [];
         this.currentAreaId = null;
+        this.currentView = 'achievements'; // 'achievements' or 'friends'
         this.currentFilter = 'todas';
+        this.friendsMap = new Set();
+        this.pendingRequests = new Map(); // key: otherUid -> { direction: 'sent'|'received', requestId }
+        this.lastSearchResults = [];
         this.dataVersion = null;
         this.currentUser = null;
         this.saveTimeout = null;
@@ -15,6 +19,8 @@ class AchievementManager {
         await this.loadData();
         this.setupEventListeners();
         this.setupAuthListeners();
+        this.setupFriendsListeners();
+        this.setupNameModal();
         this.renderAreas();
         this.selectArea(null);
     }
@@ -196,23 +202,622 @@ class AchievementManager {
         }
     }
 
-    handleAuthStateChange(user) {
+    async handleAuthStateChange(user) {
         this.currentUser = user;
         const loginBtn = document.getElementById('loginBtn');
         const logoutBtn = document.getElementById('logoutBtn');
         const userEmailEl = document.getElementById('userEmail');
+        const friendsNavBtn = document.getElementById('friendsNavBtn');
 
         if (user) {
+            // update search UI now that auth changed
+            this.updateFriendsAuthState();
             if (loginBtn) loginBtn.hidden = true;
             if (logoutBtn) logoutBtn.hidden = false;
             if (userEmailEl) userEmailEl.textContent = user.email || '';
+            if (friendsNavBtn) friendsNavBtn.style.display = 'flex';
             // Carregar progresso do usuário
             this.loadUserDataFor(user.uid);
+            // Subscribe to realtime updates for friends and friendRequests
+            this.subscribeToFriends();
+            this.subscribeToFriendRequests();
+            // Save public profile for search
+            if (window.firebaseService) {
+                await window.firebaseService.savePublicProfile(user.uid, { displayName: user.displayName || '', photoURL: user.photoURL || '' });
+                // Load public profile and set header to displayName if exists
+                const publicProfile = await window.firebaseService.getPublicProfile(user.uid);
+                const headerName = (publicProfile && publicProfile.displayName) || user.displayName || user.email || '';
+                if (userEmailEl) userEmailEl.textContent = headerName;
+                // Check if the profile has name; if not, open name modal
+                if (!publicProfile || !publicProfile.displayName) {
+                    const nameModal = document.getElementById('setNameModal');
+                    const nameInput = document.getElementById('displayNameInput');
+                    if (nameInput && nameModal) {
+                        nameInput.value = user.displayName || (user.email ? user.email.split('@')[0] : '');
+                        nameModal.classList.remove('hidden');
+                    }
+                }
+                // We do not show any admin actions here.
+            }
         } else {
+            // update UI for friends search when user signed out
+            this.updateFriendsAuthState();
             if (loginBtn) loginBtn.hidden = false;
             if (logoutBtn) logoutBtn.hidden = true;
             if (userEmailEl) userEmailEl.textContent = '';
+            if (friendsNavBtn) friendsNavBtn.style.display = 'none';
+            // reindexBtn removed
             this.updateSyncStatus('Offline');
+            // unsubscribe realtime listeners
+            this.unsubscribeFromFriendRequests();
+            this.unsubscribeFromFriends();
+        }
+    }
+
+    setupFriendsListeners() {
+        const searchBtn = document.getElementById('friendSearchBtn');
+        const searchInput = document.getElementById('friendSearch');
+        const friendsNavBtn = document.getElementById('friendsNavBtn');
+
+        if (friendsNavBtn) {
+            friendsNavBtn.addEventListener('click', () => this.selectFriendsView());
+        }
+
+        if (searchBtn) {
+            searchBtn.addEventListener('click', async () => {
+                // require login to search
+                if (!this.currentUser) {
+                    this.showToast('Faça login para pesquisar amigos', true);
+                    const loginModal = document.getElementById('loginModal');
+                    if (loginModal) loginModal.classList.remove('hidden');
+                    return;
+                }
+                const q = searchInput.value.trim();
+                if (!q) return;
+                const results = await window.firebaseService.searchUsersPublic(q);
+                this.renderFriendSearchResults(results);
+            });
+
+            // allow Enter key
+            if (searchInput) {
+                searchInput.addEventListener('keypress', (e) => {
+                    if (e.key === 'Enter') searchBtn.click();
+                });
+            }
+        }
+        // Click on friend list to view profile
+        const searchResultsEl = document.getElementById('searchResults');
+        if (searchResultsEl) {
+            searchResultsEl.addEventListener('click', (e) => {
+                const target = e.target.closest('.friend-item');
+                if (target && target.dataset.uid) {
+                    // Click on search result opens profile
+                    this.viewFriendProfile(target.dataset.uid);
+                }
+                const addBtn = e.target.closest('.add-friend-btn');
+                if (addBtn) {
+                    const toUid = addBtn.dataset.uid;
+                    this.handleSendFriendRequest(toUid, addBtn);
+                }
+            });
+        }
+        const friendList = document.getElementById('friendList');
+        if (friendList) {
+            friendList.addEventListener('click', (e) => {
+                const target = e.target.closest('.friend-item');
+                if (target && target.dataset.uid) {
+                    this.viewFriendProfile(target.dataset.uid);
+                }
+            });
+        }
+        // Reindex button for admin
+        // removed reindex button handler and admin migration
+        const hintEl = document.getElementById('friendSearchHint');
+        if (hintEl) {
+            hintEl.addEventListener('click', () => {
+                if (!this.currentUser) {
+                    const loginModal = document.getElementById('loginModal');
+                    if (loginModal) loginModal.classList.remove('hidden');
+                    this.showToast('Faça login para pesquisar amigos', true);
+                }
+            });
+        }
+    }
+
+    setupNameModal() {
+        const nameModal = document.getElementById('setNameModal');
+        const nameInput = document.getElementById('displayNameInput');
+        const saveBtn = document.getElementById('saveNameBtn');
+        const closeBtn = document.getElementById('closeNameBtn');
+
+        if (saveBtn) {
+            saveBtn.addEventListener('click', async () => {
+                const displayName = (nameInput && nameInput.value.trim()) || '';
+                if (!displayName) {
+                    this.showToast('Digite um nome para ser encontrado', true);
+                    return;
+                }
+                if (!this.currentUser) {
+                    this.showToast('Faça login antes de salvar o nome', true);
+                    return;
+                }
+                const success = await window.firebaseService.savePublicProfile(this.currentUser.uid, { displayName, photoURL: this.currentUser.photoURL || '' });
+                if (success) {
+                    this.showToast('Nome salvo com sucesso');
+                    if (nameModal) nameModal.classList.add('hidden');
+                    // refresh friends list and requests
+                    this.fetchFriends();
+                    this.fetchFriendRequests();
+                } else {
+                    this.showToast('Erro ao salvar nome', true);
+                }
+            });
+        }
+        if (closeBtn) closeBtn.addEventListener('click', () => { if (nameModal) nameModal.classList.add('hidden'); });
+    }
+
+    updateFriendsAuthState() {
+        const searchInput = document.getElementById('friendSearch');
+        const searchBtn = document.getElementById('friendSearchBtn');
+        const hint = document.getElementById('friendSearchHint');
+        if (!searchInput || !searchBtn || !hint) return;
+        if (!this.currentUser) {
+            searchInput.disabled = true;
+            searchBtn.disabled = true;
+            hint.classList.remove('hidden');
+        } else {
+            searchInput.disabled = false;
+            searchBtn.disabled = false;
+            hint.classList.add('hidden');
+        }
+    }
+
+    selectFriendsView() {
+        // Deselect areas
+        document.querySelectorAll('.area-btn').forEach(btn => btn.classList.remove('active'));
+
+        // Activate friends nav button
+        const friendsNavBtn = document.getElementById('friendsNavBtn');
+        if (friendsNavBtn) friendsNavBtn.classList.add('active');
+
+        // update search UI based on auth
+        this.updateFriendsAuthState();
+
+        // Hide achievements views
+        const achievementsView = document.getElementById('achievementsView');
+        const actionsView = document.getElementById('actionsView');
+        const progressSection = document.querySelector('.progress-section');
+        const header = document.querySelector('.header');
+
+        if (achievementsView) achievementsView.classList.add('hidden');
+        if (actionsView) actionsView.classList.add('hidden');
+        if (progressSection) progressSection.classList.add('hidden');
+        if (header) header.classList.add('hidden');
+
+        // Show friends page
+        const friendsPage = document.getElementById('friendsPage');
+        if (friendsPage) friendsPage.classList.remove('hidden');
+
+        this.currentView = 'friends';
+    }
+
+    selectAchievementsView() {
+        // Deselect friends nav button
+        const friendsNavBtn = document.getElementById('friendsNavBtn');
+        if (friendsNavBtn) friendsNavBtn.classList.remove('active');
+
+        // Hide friends page
+        const friendsPage = document.getElementById('friendsPage');
+        if (friendsPage) friendsPage.classList.add('hidden');
+
+        // Show achievements views
+        const achievementsView = document.getElementById('achievementsView');
+        const actionsView = document.getElementById('actionsView');
+        const progressSection = document.querySelector('.progress-section');
+        const header = document.querySelector('.header');
+
+        if (achievementsView) achievementsView.classList.remove('hidden');
+        if (actionsView) actionsView.classList.remove('hidden');
+        if (progressSection) progressSection.classList.remove('hidden');
+        if (header) header.classList.remove('hidden');
+
+        this.currentView = 'achievements';
+    }
+
+    async renderFriendSearchResults(results) {
+        const el = document.getElementById('searchResults');
+        if (!el) return;
+        el.innerHTML = '';
+        const uid = this.currentUser ? this.currentUser.uid : null;
+        const hint = document.getElementById('friendSearchHint');
+        if (hint) {
+            if (!this.currentUser) {
+                hint.textContent = 'Faça login para pesquisar por amigos.';
+                hint.classList.remove('hidden');
+            } else {
+                hint.classList.add('hidden');
+            }
+        }
+        const toRender = results && results.length > 0 ? results : (this.lastSearchResults || []);
+        this.lastSearchResults = toRender;
+        console.debug('renderFriendSearchResults: toRender length=', toRender.length, 'userId=', uid);
+        const hintEl = document.getElementById('friendSearchHint');
+        if (hintEl) {
+            if (!this.currentUser) {
+                hintEl.textContent = 'Faça login para pesquisar por amigos.';
+            } else {
+                hintEl.textContent = `Resultados: ${toRender.length}`;
+                hintEl.classList.remove('hidden');
+            }
+        }
+        if (!toRender || toRender.length === 0) {
+            el.innerHTML = '<div class="friend-empty">Nenhum usuário encontrado</div>';
+            if (hint && this.currentUser) {
+                hint.textContent = 'Nenhum usuário encontrado. Apenas usuários que usaram o app e definiram um nome público podem ser encontrados.';
+                hint.classList.remove('hidden');
+            }
+            return;
+        }
+        for (const r of toRender) {
+            // skip self
+            if (uid && r.uid === uid) continue;
+            const item = document.createElement('div');
+            item.className = 'friend-item';
+            item.dataset.uid = r.uid;
+            const isFriend = this.friendsMap.has(r.uid);
+            const pending = this.pendingRequests.get(r.uid);
+            let actionHtml = '';
+            if (isFriend) {
+                actionHtml = `<button class="action-btn" disabled>Amigo</button>`;
+            } else if (pending && pending.direction === 'sent') {
+                actionHtml = `<button class="action-btn" disabled>Pendente</button>`;
+            } else if (pending && pending.direction === 'received') {
+                actionHtml = `<button class="action-btn" disabled>Solicitação Recebida</button>`;
+            } else {
+                actionHtml = `<button class="action-btn add-friend-btn" data-uid="${r.uid}">Adicionar</button>`;
+            }
+
+            item.innerHTML = `
+                <div class="friend-avatar">${r.photoURL ? `<img src="${r.photoURL}" alt="${r.displayName}">` : '👤'}</div>
+                <div class="friend-meta">
+                    <strong>${r.displayName || 'Sem nome'}</strong>
+                </div>
+                <div class="friend-actions">
+                    ${actionHtml}
+                </div>
+            `;
+            // delegating add-button click to searchResultsEl handler
+            el.appendChild(item);
+        }
+    }
+
+    async handleSendFriendRequest(toUid, addBtn = null) {
+        console.debug('handleSendFriendRequest start', { toUid, currentUid: this.currentUser ? this.currentUser.uid : null });
+        if (!this.currentUser) {
+            this.showToast('Faça login para enviar solicitações', true);
+            const loginModal = document.getElementById('loginModal');
+            if (loginModal) loginModal.classList.remove('hidden');
+            return;
+        }
+        if (!toUid) {
+            this.showToast('Usuário inválido', true);
+            return;
+        }
+        try {
+            const res = await window.firebaseService.sendFriendRequest(toUid);
+            console.debug('sendFriendRequest response:', res);
+            if (res && res.success) {
+                this.pendingRequests.set(toUid, { direction: 'sent', requestId: res.id });
+                this.showToast('Solicitação enviada com sucesso!');
+                // Update UI - change button state
+                if (addBtn) {
+                    addBtn.textContent = 'Pendente';
+                    addBtn.disabled = true;
+                    addBtn.classList.remove('add-friend-btn');
+                }
+                // re-render last search results
+                this.renderFriendSearchResults(this.lastSearchResults);
+            } else {
+                this.showToast('Erro ao enviar solicitação', true);
+            }
+        } catch (err) {
+            console.error('handleSendFriendRequest error:', { err, code: err.code, message: err.message });
+            // Extract error message
+            let errorMsg = 'Erro ao enviar solicitação';
+            if (err && err.message) {
+                if (err.message.includes('already-exists')) {
+                    errorMsg = 'Solicitação ou amizade já existe';
+                } else if (err.message.includes('not-found')) {
+                    errorMsg = 'Usuário não encontrado';
+                } else if (err.message.includes('permission-denied')) {
+                    errorMsg = 'Sem permissão';
+                } else {
+                    errorMsg = err.message;
+                }
+            }
+            this.showToast(errorMsg, true);
+        }
+    }
+
+    async fetchFriendRequests() {
+        if (!this.currentUser) return;
+        try {
+            // get both received and sent pending requests
+            const receivedSnapshot = await firebase.firestore().collection('friendRequests')
+                .where('toUid', '==', this.currentUser.uid)
+                .where('status', '==', 'pending')
+                .get();
+            const sentSnapshot = await firebase.firestore().collection('friendRequests')
+                .where('fromUid', '==', this.currentUser.uid)
+                .where('status', '==', 'pending')
+                .get();
+            // Build pendingRequests map
+            this.pendingRequests.clear();
+            for (const doc of sentSnapshot.docs) {
+                const data = doc.data();
+                this.pendingRequests.set(data.toUid, { direction: 'sent', requestId: doc.id });
+            }
+            for (const doc of receivedSnapshot.docs) {
+                const data = doc.data();
+                this.pendingRequests.set(data.fromUid, { direction: 'received', requestId: doc.id });
+            }
+            const container = document.getElementById('friendRequestsList');
+            if (!container) return;
+            container.innerHTML = '';
+            for (const doc of receivedSnapshot.docs) {
+                const data = doc.data();
+                // Load public profile for sender
+                let senderName = data.fromUid;
+                try {
+                    const publicDoc = await firebase.firestore().collection('usersPublic').doc(data.fromUid).get();
+                    if (publicDoc.exists) senderName = publicDoc.data().displayName || senderName;
+                } catch (err) {
+                    // ignore
+                }
+                const item = document.createElement('div');
+                item.className = 'friend-request';
+                item.innerHTML = `
+                    <div class="request-meta">
+                        <strong>${senderName}</strong>
+                    </div>
+                    <div class="request-actions">
+                        <button class="action-btn accept-request" data-id="${doc.id}">Aceitar</button>
+                        <button class="action-btn reject-request" data-id="${doc.id}">Rejeitar</button>
+                    </div>
+                `;
+                const acceptBtn = item.querySelector('.accept-request');
+                const rejectBtn = item.querySelector('.reject-request');
+                acceptBtn.addEventListener('click', async () => {
+                    try {
+                        const res = await window.firebaseService.acceptFriendRequest(doc.id);
+                        if (res && res.success) {
+                            this.showToast('Solicitação aceita');
+                            this.fetchFriends();
+                            this.fetchFriendRequests();
+                        }
+                    } catch (err) {
+                        console.error('acceptFriendRequest error', err);
+                        this.showToast('Erro ao aceitar', true);
+                    }
+                });
+                rejectBtn.addEventListener('click', async () => {
+                    try {
+                        const res = await window.firebaseService.rejectFriendRequest(doc.id);
+                        if (res && res.success) {
+                            this.showToast('Solicitação rejeitada');
+                            this.fetchFriendRequests();
+                        }
+                    } catch (err) {
+                        console.error('rejectFriendRequest error', err);
+                        this.showToast('Erro ao rejeitar', true);
+                    }
+                });
+                container.appendChild(item);
+            }
+            // After populating pendingRequests, update search UI if visible
+            const sr = document.getElementById('searchResults');
+            if (sr && sr.children.length) this.renderFriendSearchResults(this.lastSearchResults); // re-render to update states
+        } catch (err) {
+            console.error('fetchFriendRequests', err);
+        }
+    }
+
+    // Real-time listeners for friend requests
+    subscribeToFriendRequests() {
+        if (!this.currentUser) return;
+        const uid = this.currentUser.uid;
+        // avoid duplicate listeners
+        this.unsubscribeFromFriendRequests();
+        const requestsRef = firebase.firestore().collection('friendRequests');
+
+        // Received
+        this._frReqUnsubReceived = requestsRef.where('toUid', '==', uid).onSnapshot(async snapshot => {
+            for (const change of snapshot.docChanges()) {
+                const doc = change.doc;
+                const data = doc.data();
+                const otherUid = data.fromUid;
+                if (change.type === 'added' && data.status === 'pending') {
+                    this.pendingRequests.set(otherUid, { direction: 'received', requestId: doc.id });
+                } else if (change.type === 'modified') {
+                    if (data.status === 'accepted') {
+                        // Accepting user will have created own friends doc via acceptFriendRequest
+                        this.pendingRequests.delete(otherUid);
+                        this.fetchFriends();
+                    } else if (data.status === 'rejected') {
+                        this.pendingRequests.delete(otherUid);
+                    }
+                } else if (change.type === 'removed') {
+                    this.pendingRequests.delete(otherUid);
+                }
+            }
+            this.fetchFriendRequests();
+        }, err => console.error('friendRequests received listener error', err));
+
+        // Sent
+        this._frReqUnsubSent = requestsRef.where('fromUid', '==', uid).onSnapshot(async snapshot => {
+            for (const change of snapshot.docChanges()) {
+                const doc = change.doc;
+                const data = doc.data();
+                const otherUid = data.toUid;
+                if (change.type === 'added' && data.status === 'pending') {
+                    this.pendingRequests.set(otherUid, { direction: 'sent', requestId: doc.id });
+                } else if (change.type === 'modified') {
+                    if (data.status === 'accepted') {
+                        // We were the sender; now create our friend doc for otherUid (our own side)
+                        try {
+                            const myUid = this.currentUser.uid;
+                            const frDoc = await firebase.firestore().collection('users').doc(myUid).collection('friends').doc(otherUid).get();
+                            if (!frDoc.exists) {
+                                await firebase.firestore().collection('users').doc(myUid).collection('friends').doc(otherUid).set({ uid: otherUid, since: firebase.firestore.FieldValue.serverTimestamp() });
+                            }
+                        } catch (e) {
+                            console.error('Error creating friend doc for sender after acceptance', e);
+                        }
+                        this.pendingRequests.delete(otherUid);
+                        this.fetchFriends();
+                    } else if (data.status === 'rejected') {
+                        this.pendingRequests.delete(otherUid);
+                    }
+                } else if (change.type === 'removed') {
+                    this.pendingRequests.delete(otherUid);
+                }
+            }
+            this.fetchFriendRequests();
+        }, err => console.error('friendRequests sent listener error', err));
+    }
+
+    unsubscribeFromFriendRequests() {
+        if (this._frReqUnsubReceived) {
+            try { this._frReqUnsubReceived(); } catch (e) { }
+            this._frReqUnsubReceived = null;
+        }
+        if (this._frReqUnsubSent) {
+            try { this._frReqUnsubSent(); } catch (e) { }
+            this._frReqUnsubSent = null;
+        }
+    }
+
+    subscribeToFriends() {
+        if (!this.currentUser) return;
+        const uid = this.currentUser.uid;
+        this.unsubscribeFromFriends();
+        this._friendsUnsub = firebase.firestore().collection('users').doc(uid).collection('friends').onSnapshot(snapshot => {
+            // rebuild friendsMap
+            this.friendsMap.clear();
+            snapshot.forEach(doc => {
+                const data = doc.data();
+                const friendUid = data.uid;
+                this.friendsMap.add(friendUid);
+            });
+            // update UI
+            this.fetchFriends(); // Will re-render friend list
+            this.renderFriendSearchResults(this.lastSearchResults);
+        }, err => console.error('friends listener error', err));
+    }
+
+    unsubscribeFromFriends() {
+        if (this._friendsUnsub) {
+            try { this._friendsUnsub(); } catch (e) { }
+            this._friendsUnsub = null;
+        }
+    }
+
+    async fetchFriends() {
+        if (!this.currentUser) return;
+        try {
+            const snapshot = await firebase.firestore().collection('users').doc(this.currentUser.uid).collection('friends').get();
+            const container = document.getElementById('friendList');
+            if (!container) return;
+            container.innerHTML = '';
+            this.friendsMap.clear();
+            for (const doc of snapshot.docs) {
+                const data = doc.data();
+                const friendUid = data.uid;
+                this.friendsMap.add(friendUid);
+                // Load public profile
+                let publicData = { displayName: 'Sem nome' };
+                try {
+                    const publicDoc = await firebase.firestore().collection('usersPublic').doc(friendUid).get();
+                    if (publicDoc.exists) publicData = publicDoc.data();
+                } catch (e) {
+                    console.error('Error loading public profile for friend', friendUid, e);
+                }
+                const item = document.createElement('div');
+                item.className = 'friend-item';
+                item.dataset.uid = friendUid;
+                item.innerHTML = `
+                    <div class="friend-avatar">${publicData.photoURL ? `<img src="${publicData.photoURL}" alt="${publicData.displayName}">` : '👤'}</div>
+                    <div class="friend-meta"><strong>${publicData.displayName || 'Sem nome'}</strong></div>
+                `;
+                container.appendChild(item);
+            }
+            // update search results UI if any
+            const sr = document.getElementById('searchResults');
+            if (sr && sr.children.length) this.renderFriendSearchResults(this.lastSearchResults);
+        } catch (err) {
+            console.error('fetchFriends', err);
+        }
+    }
+
+    async viewFriendProfile(friendUid) {
+        try {
+            console.debug('viewFriendProfile called for:', friendUid);
+            const res = await window.firebaseService.getFriendProfile(friendUid);
+            console.debug('viewFriendProfile response:', res);
+            if (!(res && res.success)) {
+                this.showToast('Não foi possível carregar o perfil do amigo', true);
+                return;
+            }
+            const profile = res.profile || {};
+            const isFriend = !!res.isFriend;
+            const container = document.getElementById('friendProfileContent');
+            if (!container) return;
+            // Render simple profile header
+            let html = `<div class="friend-header">`;
+            html += `<div class="friend-avatar">${profile.photoURL ? `<img src="${profile.photoURL}" alt="${profile.displayName}">` : '👤'}</div>`;
+            html += `<div class="friend-meta"><strong>${profile.displayName || 'Sem nome'}</strong>`;
+            html += `<div>Pontos: ${profile.totalPoints || 0}</div>`;
+            html += `</div></div>`;
+
+            if (!isFriend) {
+                html += `<div class="friend-note">Este perfil é público. Adicione para ver as conquistas.</div>`;
+                html += `<div class="friend-actions"><button id="fpSendRequestBtn" class="action-btn add-friend-btn" data-uid="${friendUid}">Enviar Solicitação</button></div>`;
+                container.innerHTML = html;
+                const btn = document.getElementById('fpSendRequestBtn');
+                if (btn) btn.addEventListener('click', async () => {
+                    try {
+                        await this.handleSendFriendRequest(friendUid, btn);
+                    } catch (e) {
+                        // handled in handler
+                    }
+                });
+                return;
+            }
+
+            // If friend - show unlocked achievements
+            html += `<h4>Conquistas desbloqueadas</h4>`;
+            html += `<div class="friend-achievements-grid">`;
+            const unlockedIds = profile.unlockedIds || [];
+            const unlockedSet = new Set(unlockedIds);
+            this.achievements.forEach(a => {
+                if (unlockedSet.has(a.id)) {
+                    html += `<div class="friend-achieved-item">${a.name} (+${a.points})</div>`;
+                }
+            });
+            html += `</div>`;
+            container.innerHTML = html;
+        } catch (err) {
+            console.error('viewFriendProfile', err);
+            // handle unauthenticated specially
+            if (err && err.message && err.message.indexOf('unauthenticated') !== -1) {
+                this.showToast('Faça login para ver perfis', true);
+                const loginModal = document.getElementById('loginModal');
+                if (loginModal) loginModal.classList.remove('hidden');
+                return;
+            }
+            const container = document.getElementById('friendProfileContent');
+            if (container) container.innerHTML = '<div class="friend-error">Erro ao carregar profile do amigo</div>';
+            this.showToast('Erro ao carregar profile do amigo', true);
         }
     }
 
@@ -322,10 +927,17 @@ class AchievementManager {
             }
         });
 
+        // Deselect friends nav button
+        const friendsNavBtn = document.getElementById('friendsNavBtn');
+        if (friendsNavBtn) friendsNavBtn.classList.remove('active');
+
         // Resetar filtro
         document.querySelectorAll('.filter-btn').forEach(btn => {
             btn.classList.toggle('active', btn.dataset.filter === 'todas');
         });
+
+        // Show achievements views
+        this.selectAchievementsView();
 
         // Renderizar
         this.updateTitle();
