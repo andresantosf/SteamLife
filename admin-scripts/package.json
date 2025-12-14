@@ -1,8 +1,0 @@
-{
-    "name": "steam-life-admin",
-    "version": "1.0.0",
-    "private": true,
-    "dependencies": {
-        "firebase-admin": "^11.12.0"
-    }
-}
