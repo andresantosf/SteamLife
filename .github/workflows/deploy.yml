@@ -3,29 +3,21 @@ name: Deploy to GitHub Pages
 permissions:
   contents: write
   pages: write
-  id-token: write
 
 on:
   push:
-    branches: [ main, master ]
-  pull_request:
     branches: [ main, master ]
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v3
-      with:
-        persist-credentials: true
-        fetch-depth: 0
 
     - name: Create Firebase Config from Secrets
       run: |
         mkdir -p data
-        cat > data/firebase-config.js <<EOF
-        // Auto-generated from GitHub Secrets - DO NOT COMMIT
+        cat > data/firebase-config.js << 'ENDOFFILE'
         window.firebaseConfig = {
           apiKey: "${{ secrets.FIREBASE_API_KEY }}",
           authDomain: "${{ secrets.FIREBASE_AUTH_DOMAIN }}",
@@ -34,38 +26,11 @@ jobs:
           messagingSenderId: "${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}",
           appId: "${{ secrets.FIREBASE_APP_ID }}"
         };
-        EOF
-
-        # Quick validation: file must exist and be non-empty (will not print contents)
-        if [ -s data/firebase-config.js ]; then
-          echo "[deploy.yml] data/firebase-config.js created and not empty"
-        else
-          echo "[deploy.yml] ERROR: data/firebase-config.js is missing or empty" >&2
-          ls -la data || true
-          exit 1
-        fi
-
-        # Show current root files for debugging (will not show file contents)
-        ls -la
-
-    - name: Prepare public folder for publish
-      run: |
-        echo "Preparing public/ folder for deployment"
-        rm -rf public || true
-        mkdir -p public
-        # Copy site files into public (preserve structure)
-        rsync -av --exclude='.git' --exclude='.github' --exclude='node_modules' ./ public/
-        # Ensure generated config is included
-        if [ -f data/firebase-config.js ]; then
-          mkdir -p public/data
-          cp data/firebase-config.js public/data/firebase-config.js
-        fi
-        echo "Public folder size:"
-        du -sh public || true
+        ENDOFFILE
+        ls -la data/firebase-config.js
 
     - name: Deploy to GitHub Pages
       uses: peaceiris/actions-gh-pages@v3
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: public/
-        cname: # optional: add your custom domain here
+        publish_dir: ./
