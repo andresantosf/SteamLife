@@ -1,5 +1,10 @@
 name: Deploy to GitHub Pages
 
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
 on:
   push:
     branches: [ main, master ]
@@ -12,6 +17,9 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+      with:
+        persist-credentials: true
+        fetch-depth: 0
 
     - name: Create Firebase Config from Secrets
       run: |
