@@ -139,6 +139,8 @@ class AchievementManager {
 
         if (loginBtn) loginBtn.addEventListener('click', () => loginModal.classList.remove('hidden'));
         if (closeLoginBtn) closeLoginBtn.addEventListener('click', () => loginModal.classList.add('hidden'));
+        const modalCloseX = document.getElementById('loginModalCloseX');
+        if (modalCloseX) modalCloseX.addEventListener('click', () => loginModal.classList.add('hidden'));
         if (logoutBtn) logoutBtn.addEventListener('click', async () => {
             if (window.firebaseService) {
                 await window.firebaseService.signOut();
@@ -206,6 +208,25 @@ class AchievementManager {
         if (window.firebaseService && window.firebaseService.onAuthStateChanged) {
             window.firebaseService.onAuthStateChanged(user => this.handleAuthStateChange(user));
         }
+
+        // Prompt login on start if user is not authenticated (small delay for SDK init)
+        setTimeout(() => {
+            try {
+                let current = null;
+                if (window.firebaseService && typeof window.firebaseService.getCurrentUser === 'function') {
+                    current = window.firebaseService.getCurrentUser();
+                } else if (window.firebaseService && window.firebaseService.auth && window.firebaseService.auth.currentUser) {
+                    current = window.firebaseService.auth.currentUser;
+                } else if (window.firebase && firebase.auth) {
+                    current = firebase.auth().currentUser;
+                }
+                if (!current) {
+                    if (loginModal) loginModal.classList.remove('hidden');
+                }
+            } catch (e) {
+                // ignore
+            }
+        }, 500);
     }
 
     async handleAuthStateChange(user) {
@@ -1035,21 +1056,17 @@ class AchievementManager {
     }
 
     mergeRemoteProgress(remote) {
-        const remoteUnlocked = remote.unlockedIds || [];
-        const localUnlocked = this.achievements.filter(a => a.unlocked).map(a => a.id);
-        const mergedSet = new Set([...remoteUnlocked, ...localUnlocked]);
+        // Prefer remote progress as authoritative: replace local unlocked state
+        const remoteUnlocked = Array.isArray(remote.unlockedIds) ? remote.unlockedIds : [];
+        const remoteSet = new Set(remoteUnlocked);
 
         this.achievements.forEach(a => {
-            a.unlocked = mergedSet.has(a.id);
+            a.unlocked = remoteSet.has(a.id);
         });
 
+        // Update local storage and UI from remote data. Do NOT overwrite remote immediately.
         this.saveToLocalStorage();
         this.render();
-
-        // Salvar novamente o estado mesclado no servidor
-        if (this.currentUser) {
-            this.saveUserProgressToServer(this.currentUser.uid);
-        }
     }
 
     debouncedSaveToServer(uid) {
