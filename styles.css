@@ -400,6 +400,23 @@ body {
     min-width: 300px;
 }
 
+.modal-content .modal-close-x {
+    position: absolute;
+    top: 10px;
+    right: 12px;
+    background: transparent;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 1.3rem;
+    cursor: pointer;
+    line-height: 1;
+    padding: 4px 6px;
+}
+
+.modal-content .modal-close-x:hover {
+    color: var(--text-color);
+}
+
 .modal-content label {
     font-size: 0.85em;
     display: block;
