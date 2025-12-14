@@ -6,5 +6,3 @@
 
 # Secrets
 firebase-service-account.json
-# Ignore any locally added firebase config with keys
-data/firebase-config.js
