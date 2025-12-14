@@ -359,11 +359,6 @@ body {
     gap: 8px;
 }
 
-.auth-btn.google::before {
-    content: '🔐';
-    font-size: 1.1em;
-}
-
 .user-email {
     color: var(--text-secondary);
     font-size: 0.9em;
