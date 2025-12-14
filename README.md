@@ -21,7 +21,7 @@ service cloud.firestore {
 }
 ```
 
-6. Copy `data/firebase-config.example.js` to `data/firebase-config.js` and fill with your project's values.
+6. Copy `data/firebase-config.js` to `data/firebase-config.js` and fill with your project's values.
 7. Open `index.html` in your browser (or serve with a local web server).
 
 ## Notes
@@ -36,7 +36,7 @@ service cloud.firestore {
 
 If you get an "Invalid API Key" or "auth/invalid-api-key" error, check the following:
 
-- Ensure you copied the *Web* app configuration keys (not the admin service account) into `data/firebase-config.js` (copy from `data/firebase-config.example.js`).
+- Ensure you copied the *Web* app configuration keys (not the admin service account) into `data/firebase-config.js` (copy from `data/firebase-config.js`).
 - Make sure the `apiKey` property is present and correct.
 - If you are testing locally, avoid opening `index.html` using `file://` — run a local web server instead (recommended: `npx serve` or `python -m http.server`):
 

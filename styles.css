@@ -359,8 +359,9 @@ body {
     gap: 8px;
 }
 
-.auth-btn.google:before {
-    content: '\f1a0';
+.auth-btn.google::before {
+    content: '🔐';
+    font-size: 1.1em;
 }
 
 .user-email {

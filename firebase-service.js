@@ -3,7 +3,7 @@
 
 (function () {
     if (!window.firebaseConfig) {
-        console.warn('firebaseConfig not found. Create firebase-config.js from firebase-config.example.js and fill in your project keys.');
+        console.warn('firebaseConfig not found. Create firebase-config.js from firebase-config.js and fill in your project keys.');
     }
 
     // Load Firebase into global namespace via compat build

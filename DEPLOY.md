@@ -2,7 +2,7 @@
 
 1. Create a Firebase project in the Console
 2. Create and download service account JSON (if you need admin scripts) and do NOT commit it to repo.
-3. Copy `data/firebase-config.example.js` to `data/firebase-config.js` and paste your web app config values.
+3. Copy `data/firebase-config.js` to `data/firebase-config.js` and paste your web app config values.
 4. Deploy Firestore rules:
 
 ```bash

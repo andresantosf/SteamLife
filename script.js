@@ -152,6 +152,11 @@ class AchievementManager {
         if (googleBtn) {
             googleBtn.addEventListener('click', async () => {
                 try {
+                    if (!window.firebaseService || !window.firebaseService.signInWithGoogle) {
+                        console.error('firebaseService.signInWithGoogle is not available');
+                        this.showToast('Serviço de autenticação indisponível', true);
+                        return;
+                    }
                     await window.firebaseService.signInWithGoogle();
                     loginModal.classList.add('hidden');
                     this.showToast('Login com Google bem-sucedido');
