@@ -2,32 +2,40 @@
 // Initializes Firebase and exposes helper functions via window.firebaseService
 
 (function () {
+    console.log('[firebase-service.js] Initializing...');
+    
     if (!window.firebaseConfig) {
-        console.warn('firebaseConfig not found. Create firebase-config.js from firebase-config.js and fill in your project keys.');
+        console.error('[firebase-service.js] firebaseConfig not found. Create firebase-config.js from firebase-config.example.js and fill in your project keys.');
+        window.firebaseService = null;
+        return;
     }
 
     // Load Firebase into global namespace via compat build
     // Assumes firebase-app-compat, auth-compat, and firestore-compat scripts are loaded in the page
     if (!window.firebase || !window.firebase.initializeApp) {
-        console.error('Firebase not loaded. Ensure firebase scripts are included in index.html.');
+        console.error('[firebase-service.js] Firebase SDK not loaded. Ensure firebase compat scripts are included in index.html BEFORE firebase-service.js');
+        window.firebaseService = null;
         return;
     }
+    
+    console.log('[firebase-service.js] Firebase SDK loaded, initializing...');
 
-    const app = firebase.initializeApp(window.firebaseConfig || {});
-    const auth = firebase.auth();
-    const db = firebase.firestore();
+    try {
+        const app = firebase.initializeApp(window.firebaseConfig || {});
+        const auth = firebase.auth();
+        const db = firebase.firestore();
 
-    // Enable offline persistence where possible
-    if (db && db.enablePersistence) {
-        db.enablePersistence()
-            .catch(function (err) {
-                console.warn('Firestore persistence enable error', err);
-            });
-    }
+        // Enable offline persistence where possible
+        if (db && db.enablePersistence) {
+            db.enablePersistence()
+                .catch(function (err) {
+                    console.warn('[firebase-service.js] Firestore persistence enable error', err);
+                });
+        }
 
-    // No cloud functions client: we'll implement helper functions using Firestore client-side
+        // No cloud functions client: we'll implement helper functions using Firestore client-side
 
-    window.firebaseService = {
+        window.firebaseService = {
         onAuthStateChanged: (cb) => auth.onAuthStateChanged(cb),
         signInWithGoogle: () => {
             const provider = new firebase.auth.GoogleAuthProvider();
@@ -222,5 +230,10 @@
             }
         },
         // Keep generic fallback caller removed (no functions)
-    };
+        };
+        console.log('[firebase-service.js] Successfully initialized firebaseService');
+    } catch (err) {
+        console.error('[firebase-service.js] Error initializing Firebase service:', err);
+        window.firebaseService = null;
+    }
 })();

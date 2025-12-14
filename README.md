@@ -4,25 +4,71 @@ This project integrates Firebase Authentication and Firestore to save user achie
 
 ## Setup
 
-1. Create a Firebase project at https://console.firebase.google.com.
+### 1. Firebase Project Setup
+
+1. Go to https://console.firebase.google.com and create a new project.
 2. Add a Web app and copy the config values.
-3. Enable the Google Authentication provider only. In the Firebase Console, under Authentication → Sign-in Method, enable 'Google' and configure support.
-4. Enable Firestore in Native mode.
-5. Add the following security rule (or adjust as necessary) in the Firestore rules tab:
+3. Enable Google Authentication:
+   - In Firebase Console → Authentication → Sign-in Method
+   - Enable 'Google' and configure support
+4. Enable Firestore (Native mode):
+   - In Firebase Console → Firestore Database
+   - Click "Create Database" and select "Native Mode"
+
+### 2. Firestore Security Rules
+
+Set the following security rules in Firestore:
 
 ```
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    match /usersPublic/{userId} {
+      allow read: if true;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
     match /users/{userId} {
       allow read, write: if request.auth != null && request.auth.uid == userId;
+      match /friends/{friendId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+    }
+    match /friendRequests/{document=**} {
+      allow read, write: if request.auth != null;
     }
   }
 }
 ```
 
-6. Copy `data/firebase-config.js` to `data/firebase-config.js` and fill with your project's values.
-7. Open `index.html` in your browser (or serve with a local web server).
+### 3. Configure Firebase Credentials
+
+1. Copy `data/firebase-config.example.js` to `data/firebase-config.js`:
+   ```bash
+   cp data/firebase-config.example.js data/firebase-config.js
+   ```
+
+2. Open `data/firebase-config.js` and fill in your Firebase project credentials (get them from Firebase Console → Project Settings → Your apps → Web)
+
+3. **IMPORTANT:** Add `firebase-config.js` to your `.gitignore` so you don't accidentally commit your API keys:
+   ```
+   data/firebase-config.js
+   ```
+
+### 4. Run Locally
+
+Open `index.html` in a web server (not via `file://` protocol):
+
+```bash
+# Option 1: Using npx (requires Node.js)
+npx serve .
+
+# Option 2: Using Python
+python -m http.server 8000
+# Then open http://localhost:8000
+
+# Option 3: Using PHP
+php -S localhost:8000
+```
 
 ## Notes
 
@@ -31,23 +77,35 @@ service cloud.firestore {
   - `unlockedIds` (array of achievement IDs)
   - `totalPoints` (number)
   - `lastUpdated` (timestamp)
+- Friend lists and requests are stored in `users/{userId}/friends` and `friendRequests` collections.
 
 ## Troubleshooting
 
-If you get an "Invalid API Key" or "auth/invalid-api-key" error, check the following:
+### "firebaseConfig not found" or "Firebase SDK not loaded"
 
-- Ensure you copied the *Web* app configuration keys (not the admin service account) into `data/firebase-config.js` (copy from `data/firebase-config.js`).
-- Make sure the `apiKey` property is present and correct.
-- If you are testing locally, avoid opening `index.html` using `file://` — run a local web server instead (recommended: `npx serve` or `python -m http.server`):
+- Ensure `data/firebase-config.js` exists and is properly populated with your credentials
+- Verify that all Firebase SDK scripts are loaded in `index.html` before `firebase-service.js`
+- Check the browser console (F12) for detailed error messages
 
-```bash
-npx serve .
-# or
-python -m http.server 8000
-```
+### "Invalid API Key" or "auth/invalid-api-key"
 
-- Add your testing origin to Firebase Console (Firebase Authentication -> Sign-in Method -> Authorized domains). For local testing add `localhost` and the port used (for example: `localhost:3000`).
-- Make sure the Google sign-in provider is enabled in Firebase Console -> Authentication -> Sign-in Method.
+- Make sure you copied the **Web app** configuration (not a service account key)
+- Verify the `apiKey` in `firebase-config.js` is correct
+- Ensure Google Sign-In provider is enabled in Firebase Console
+
+### Google Sign-In not working
+
+1. Make sure you're running on a local web server, not `file://`
+2. Add your local URL to Firebase Console → Authentication → Sign-in Method → Authorized domains
+   - For `http://localhost:8000`, add `localhost`
+3. Check that Google provider is enabled in Firebase Console
+
+### Friend search not working
+
+- Ensure Firestore rules allow reading from `usersPublic` collection
+- Try searching with a full or partial name (case-insensitive)
+- Check the browser console for Firestore permission errors
+
 
 If you still see issues after these checks, open the browser console to see the full error message, and verify the config in the web app's Firebase settings.
 
