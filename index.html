@@ -43,6 +43,13 @@
                         </div>
                     </div>
                     <div id="authArea" class="auth-area">
+                        <button id="notifBtn" class="notif-btn" aria-haspopup="true" aria-expanded="false">
+                            <span class="notif-icon">🔔</span>
+                            <span id="notifCount" class="notif-count hidden">0</span>
+                        </button>
+                        <div id="notifPopup" class="notif-popup hidden" role="dialog" aria-label="Notificações">
+                            <!-- Notificações serão renderizadas aqui -->
+                        </div>
                         <button id="loginBtn" class="auth-btn">Entrar</button>
                         <button id="logoutBtn" class="auth-btn" hidden>Sair</button>
                         <span id="userEmail" class="user-email"></span>
@@ -117,8 +124,9 @@
                     <div class="friends-search-section">
                         <h3>Buscar Amigos</h3>
                         <div class="friend-search">
-                            <input type="text" id="friendSearch" placeholder="Buscar por nome...">
-                            <button id="friendSearchBtn" class="action-btn">Buscar</button>
+                            <div class="search-input-wrap">
+                                <input type="text" id="friendSearch" placeholder="Buscar por nome..." autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off" name="friend-search">
+                            </div>
                         </div>
                         <div id="friendSearchHint" class="friend-search-hint hidden">Faça login para pesquisar por
                             amigos.</div>
@@ -127,14 +135,11 @@
                             <div id="friendList"></div>
                         </div>
                     </div>
-                    <div class="friends-requests-section">
-                        <h3>Solicitações Pendentes</h3>
-                        <div id="friendRequestsList"></div>
+                    <!-- Solicitações agora acessíveis pelo sininho de notificações -->
+                    <div class="friend-profile-section">
+                        <h3>Perfil do Amigo</h3>
+                        <div id="friendProfileContent">Selecione um amigo para ver as conquistas desbloqueadas.</div>
                     </div>
-                </div>
-                <div class="friend-profile-section">
-                    <h3>Perfil do Amigo</h3>
-                    <div id="friendProfileContent">Selecione um amigo para ver as conquistas desbloqueadas.</div>
                 </div>
             </section>
         </div>

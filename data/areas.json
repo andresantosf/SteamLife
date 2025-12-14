@@ -7,6 +7,12 @@
             "color": "#FF6B6B"
         },
         {
+            "id": 2,
+            "name": "Escola",
+            "icon": "🏫",
+            "color": "#45B7D1"
+        },
+        {
             "id": 3,
             "name": "Faculdade",
             "icon": "🎓",

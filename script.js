@@ -21,6 +21,7 @@ class AchievementManager {
         this.setupAuthListeners();
         this.setupFriendsListeners();
         this.setupNameModal();
+        this.setupNotifications();
         this.renderAreas();
         this.selectArea(null);
     }
@@ -255,7 +256,6 @@ class AchievementManager {
     }
 
     setupFriendsListeners() {
-        const searchBtn = document.getElementById('friendSearchBtn');
         const searchInput = document.getElementById('friendSearch');
         const friendsNavBtn = document.getElementById('friendsNavBtn');
 
@@ -263,8 +263,10 @@ class AchievementManager {
             friendsNavBtn.addEventListener('click', () => this.selectFriendsView());
         }
 
-        if (searchBtn) {
-            searchBtn.addEventListener('click', async () => {
+        // wire Enter key to trigger a search (no visible button)
+        if (searchInput) {
+            searchInput.addEventListener('keydown', async (e) => {
+                if (e.key !== 'Enter') return;
                 // require login to search
                 if (!this.currentUser) {
                     this.showToast('Faça login para pesquisar amigos', true);
@@ -274,16 +276,14 @@ class AchievementManager {
                 }
                 const q = searchInput.value.trim();
                 if (!q) return;
-                const results = await window.firebaseService.searchUsersPublic(q);
-                this.renderFriendSearchResults(results);
+                try {
+                    const results = await window.firebaseService.searchUsersPublic(q);
+                    this.renderFriendSearchResults(results);
+                } catch (err) {
+                    console.error('Erro buscando usuários públicos', err);
+                    this.showToast('Erro ao pesquisar usuários', true);
+                }
             });
-
-            // allow Enter key
-            if (searchInput) {
-                searchInput.addEventListener('keypress', (e) => {
-                    if (e.key === 'Enter') searchBtn.click();
-                });
-            }
         }
         // Click on friend list to view profile
         const searchResultsEl = document.getElementById('searchResults');
@@ -322,6 +322,15 @@ class AchievementManager {
                 }
             });
         }
+
+        // Button in friends page that opens the notification popup
+        const openNotifBtn = document.getElementById('openNotifFromFriends');
+        if (openNotifBtn) {
+            openNotifBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                this.openNotificationsPopup();
+            });
+        }
     }
 
     setupNameModal() {
@@ -358,16 +367,13 @@ class AchievementManager {
 
     updateFriendsAuthState() {
         const searchInput = document.getElementById('friendSearch');
-        const searchBtn = document.getElementById('friendSearchBtn');
         const hint = document.getElementById('friendSearchHint');
-        if (!searchInput || !searchBtn || !hint) return;
+        if (!searchInput || !hint) return;
         if (!this.currentUser) {
             searchInput.disabled = true;
-            searchBtn.disabled = true;
             hint.classList.remove('hidden');
         } else {
             searchInput.disabled = false;
-            searchBtn.disabled = false;
             hint.classList.add('hidden');
         }
     }
@@ -563,62 +569,202 @@ class AchievementManager {
             }
             const container = document.getElementById('friendRequestsList');
             if (!container) return;
+            // Render received requests into the friend requests panel using shared builder
             container.innerHTML = '';
             for (const doc of receivedSnapshot.docs) {
                 const data = doc.data();
-                // Load public profile for sender
-                let senderName = data.fromUid;
-                try {
-                    const publicDoc = await firebase.firestore().collection('usersPublic').doc(data.fromUid).get();
-                    if (publicDoc.exists) senderName = publicDoc.data().displayName || senderName;
-                } catch (err) {
-                    // ignore
-                }
-                const item = document.createElement('div');
-                item.className = 'friend-request';
-                item.innerHTML = `
-                    <div class="request-meta">
-                        <strong>${senderName}</strong>
-                    </div>
-                    <div class="request-actions">
-                        <button class="action-btn accept-request" data-id="${doc.id}">Aceitar</button>
-                        <button class="action-btn reject-request" data-id="${doc.id}">Rejeitar</button>
-                    </div>
-                `;
-                const acceptBtn = item.querySelector('.accept-request');
-                const rejectBtn = item.querySelector('.reject-request');
-                acceptBtn.addEventListener('click', async () => {
-                    try {
-                        const res = await window.firebaseService.acceptFriendRequest(doc.id);
-                        if (res && res.success) {
-                            this.showToast('Solicitação aceita');
-                            this.fetchFriends();
-                            this.fetchFriendRequests();
-                        }
-                    } catch (err) {
-                        console.error('acceptFriendRequest error', err);
-                        this.showToast('Erro ao aceitar', true);
-                    }
-                });
-                rejectBtn.addEventListener('click', async () => {
-                    try {
-                        const res = await window.firebaseService.rejectFriendRequest(doc.id);
-                        if (res && res.success) {
-                            this.showToast('Solicitação rejeitada');
-                            this.fetchFriendRequests();
-                        }
-                    } catch (err) {
-                        console.error('rejectFriendRequest error', err);
-                        this.showToast('Erro ao rejeitar', true);
-                    }
-                });
+                const publicDoc = await firebase.firestore().collection('usersPublic').doc(data.fromUid).get().catch(() => null);
+                const publicData = publicDoc && publicDoc.exists ? publicDoc.data() : { displayName: data.fromUid, photoURL: '' };
+                const item = this.createFriendRequestElement(publicData, doc.id);
                 container.appendChild(item);
             }
             // After populating pendingRequests, update search UI if visible
             const sr = document.getElementById('searchResults');
             if (sr && sr.children.length) this.renderFriendSearchResults(this.lastSearchResults); // re-render to update states
+            // Update notifications UI (bell)
+            this.updateNotificationsUI();
         } catch (err) {
             console.error('fetchFriendRequests', err);
+        }
+    }
+
+    // Create DOM element for a friend request (shared between panel and popup)
+    createFriendRequestElement(publicData, requestId) {
+        const item = document.createElement('div');
+        item.className = 'friend-request';
+        item.innerHTML = `
+            <div class="request-meta">
+                <div class="friend-avatar">${publicData.photoURL ? `<img src="${publicData.photoURL}" alt="${publicData.displayName}">` : '👤'}</div>
+                <strong>${publicData.displayName || 'Sem nome'}</strong>
+            </div>
+            <div class="request-actions">
+                <button class="action-btn accept-request" data-id="${requestId}">Aceitar</button>
+                <button class="action-btn reject-request" data-id="${requestId}">Rejeitar</button>
+            </div>
+        `;
+
+        const acceptBtn = item.querySelector('.accept-request');
+        const rejectBtn = item.querySelector('.reject-request');
+        acceptBtn.addEventListener('click', async () => {
+            acceptBtn.disabled = true;
+            try {
+                const res = await window.firebaseService.acceptFriendRequest(requestId);
+                if (res && res.success) {
+                    this.showToast('Solicitação aceita');
+                    await this.fetchFriends();
+                    await this.fetchFriendRequests();
+                } else {
+                    this.showToast('Erro ao aceitar', true);
+                    acceptBtn.disabled = false;
+                }
+            } catch (err) {
+                console.error('acceptFriendRequest error', err);
+                this.showToast('Erro ao aceitar', true);
+                acceptBtn.disabled = false;
+            }
+        });
+
+        rejectBtn.addEventListener('click', async () => {
+            rejectBtn.disabled = true;
+            try {
+                const res = await window.firebaseService.rejectFriendRequest(requestId);
+                if (res && res.success) {
+                    this.showToast('Solicitação rejeitada');
+                    await this.fetchFriendRequests();
+                } else {
+                    this.showToast('Erro ao rejeitar', true);
+                    rejectBtn.disabled = false;
+                }
+            } catch (err) {
+                console.error('rejectFriendRequest error', err);
+                this.showToast('Erro ao rejeitar', true);
+                rejectBtn.disabled = false;
+            }
+        });
+
+        return item;
+    }
+
+    setupNotifications() {
+        const notifBtn = document.getElementById('notifBtn');
+        const notifPopup = document.getElementById('notifPopup');
+        const notifCount = document.getElementById('notifCount');
+        if (!notifBtn || !notifPopup || !notifCount) return;
+
+        const closeNotifPopup = () => {
+            if (!notifPopup.classList.contains('open')) return;
+            notifPopup.classList.remove('open');
+            notifBtn.setAttribute('aria-expanded', 'false');
+            const onEnd = (e) => {
+                if (e.target === notifPopup) {
+                    notifPopup.classList.add('hidden');
+                    notifPopup.removeEventListener('transitionend', onEnd);
+                }
+            };
+            notifPopup.addEventListener('transitionend', onEnd);
+        };
+
+        // Toggle popup on bell click (with animation)
+        notifBtn.addEventListener('click', async (e) => {
+            e.stopPropagation();
+            if (notifPopup.classList.contains('hidden')) {
+                await this.renderNotificationsPopup();
+                notifPopup.classList.remove('hidden');
+                // allow layout to settle then animate
+                requestAnimationFrame(() => notifPopup.classList.add('open'));
+                notifBtn.setAttribute('aria-expanded', 'true');
+            } else {
+                closeNotifPopup();
+            }
+        });
+
+        // Close when clicking outside
+        document.addEventListener('click', (e) => {
+            if (!notifPopup.classList.contains('hidden')) {
+                const target = e.target;
+                if (!notifPopup.contains(target) && target !== notifBtn && !notifBtn.contains(target)) {
+                    closeNotifPopup();
+                }
+            }
+        });
+
+        // Close on Esc
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeNotifPopup();
+            }
+        });
+
+        // initial count
+        this.updateNotificationsUI();
+    }
+
+    // Programmatically open the notifications popup (used by "Abrir Notificações" button)
+    async openNotificationsPopup() {
+        const notifBtn = document.getElementById('notifBtn');
+        const notifPopup = document.getElementById('notifPopup');
+        if (!notifBtn || !notifPopup) return;
+        if (notifPopup.classList.contains('hidden')) {
+            await this.renderNotificationsPopup();
+            notifPopup.classList.remove('hidden');
+            requestAnimationFrame(() => notifPopup.classList.add('open'));
+            notifBtn.setAttribute('aria-expanded', 'true');
+        } else {
+            // if already open, ensure it's visible
+            notifPopup.classList.add('open');
+        }
+    }
+
+    updateNotificationsUI() {
+        const notifCount = document.getElementById('notifCount');
+        const notifBtn = document.getElementById('notifBtn');
+        if (!notifCount || !notifBtn) return;
+        let received = 0;
+        for (const [uid, info] of this.pendingRequests.entries()) {
+            if (info && info.direction === 'received') received++;
+        }
+        if (received > 0) {
+            notifCount.textContent = String(received);
+            notifCount.classList.remove('hidden');
+            notifBtn.classList.add('has-notifs');
+        } else {
+            notifCount.classList.add('hidden');
+            notifBtn.classList.remove('has-notifs');
+        }
+    }
+
+    async renderNotificationsPopup() {
+        const notifPopup = document.getElementById('notifPopup');
+        if (!notifPopup) return;
+        notifPopup.innerHTML = '<h4>Solicitações Pendentes</h4>';
+
+        // gather received pending requests
+        const received = [];
+        for (const [uid, info] of this.pendingRequests.entries()) {
+            if (info && info.direction === 'received') {
+                received.push({ uid, requestId: info.requestId });
+            }
+        }
+
+        if (received.length === 0) {
+            notifPopup.innerHTML += '<div class="friend-empty">Nenhuma solicitação pendente</div>';
+            return;
+        }
+
+        for (const r of received) {
+            // fetch public profile (best-effort)
+            let publicData = { displayName: r.uid, photoURL: '' };
+            try {
+                const doc = await firebase.firestore().collection('usersPublic').doc(r.uid).get();
+                if (doc.exists) publicData = doc.data();
+            } catch (e) {
+                // ignore
+            }
+
+            const item = this.createFriendRequestElement(publicData, r.requestId);
+            // mark element for popup-specific styling
+            item.classList.add('notif-item');
+            notifPopup.appendChild(item);
         }
     }
 
@@ -742,12 +888,34 @@ class AchievementManager {
                 } catch (e) {
                     console.error('Error loading public profile for friend', friendUid, e);
                 }
+
+                // Load private progress to get totalPoints (if available)
+                let progress = null;
+                try {
+                    if (window.firebaseService && window.firebaseService.loadUserProgress) {
+                        progress = await window.firebaseService.loadUserProgress(friendUid);
+                    } else {
+                        const userDoc = await firebase.firestore().collection('users').doc(friendUid).get();
+                        progress = userDoc.exists ? userDoc.data() : null;
+                    }
+                } catch (e) {
+                    console.error('Error loading friend progress for', friendUid, e);
+                }
+
+                const points = (progress && (progress.totalPoints || progress.totalPoints === 0)) ? (progress.totalPoints || 0) : (publicData.totalPoints || 0);
                 const item = document.createElement('div');
                 item.className = 'friend-item';
                 item.dataset.uid = friendUid;
+                
                 item.innerHTML = `
                     <div class="friend-avatar">${publicData.photoURL ? `<img src="${publicData.photoURL}" alt="${publicData.displayName}">` : '👤'}</div>
-                    <div class="friend-meta"><strong>${publicData.displayName || 'Sem nome'}</strong></div>
+                    <div class="friend-meta">
+                        <div class="name">${publicData.displayName || 'Sem nome'}</div>
+                        <div class="small">${publicData.email || ''}</div>
+                    </div>
+                    <div class="meta-right">
+                        <div class="friend-points">+${points}</div>
+                    </div>
                 `;
                 container.appendChild(item);
             }
@@ -799,11 +967,38 @@ class AchievementManager {
             html += `<div class="friend-achievements-grid">`;
             const unlockedIds = profile.unlockedIds || [];
             const unlockedSet = new Set(unlockedIds);
-            this.achievements.forEach(a => {
-                if (unlockedSet.has(a.id)) {
-                    html += `<div class="friend-achieved-item">${a.name} (+${a.points})</div>`;
-                }
+
+            // Collect achievements unlocked by friend
+            const friendAchievements = this.achievements.filter(a => unlockedSet.has(a.id));
+
+            // Define priority for rarities (higher first)
+            const rarityPriority = { 'lendário': 5, 'épico': 4, 'raro': 3, 'incomum': 2, 'comum': 1 };
+
+            // Sort by rarity descending so DOM order matches visual priority
+            friendAchievements.sort((a, b) => {
+                const pa = rarityPriority[a.rarity] || 0;
+                const pb = rarityPriority[b.rarity] || 0;
+                return pb - pa;
             });
+
+            // Render reduced achievement cards (icon, title, points)
+            for (const a of friendAchievements) {
+                const icon = a.icon || '🎖️';
+                const rarityClass = a.rarity || 'comum';
+                const lockedClass = a.unlocked ? '' : ' locked';
+                const areaObj = this.areas.find(ar => ar.id === a.areaId || String(ar.id) === String(a.areaId));
+                const areaName = areaObj ? areaObj.name : '';
+
+                html += `<div class="friend-achieved-item ${rarityClass}${lockedClass}">
+                            <div class="emoji">${icon}</div>
+                            <div class="meta">
+                                <div class="title">${a.name}</div>
+                                <div class="area-badge">${areaName}</div>
+                            </div>
+                            <div class="points">+${a.points}</div>
+                        </div>`;
+            }
+
             html += `</div>`;
             container.innerHTML = html;
         } catch (err) {

@@ -247,6 +247,95 @@ body {
     align-items: center;
 }
 
+/* Notification bell */
+.notif-btn {
+    position: relative;
+    background: transparent;
+    border: 1px solid #2a3a4a;
+    color: var(--text-secondary);
+    padding: 6px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+}
+
+.notif-btn:hover {
+    background: var(--hover-color);
+    color: var(--text-color);
+}
+
+.notif-count {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    background: var(--danger-color);
+    color: #fff;
+    font-size: 0.75em;
+    padding: 2px 6px;
+    border-radius: 999px;
+    font-weight: 700;
+    line-height: 1;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.5);
+}
+
+.notif-count.hidden { display: none; }
+
+.notif-popup {
+    position: absolute;
+    top: 52px;
+    right: 10px;
+    width: 360px;
+    max-height: 420px;
+    background: #12171b;
+    border: 1px solid #2a3a4a;
+    border-radius: 8px;
+    padding: 10px;
+    overflow-y: auto;
+    z-index: 1200;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+}
+
+.notif-popup.hidden { display: none; }
+
+/* animation helpers for popup */
+.notif-popup {
+    opacity: 0;
+    transform: translateY(-8px) scale(0.995);
+    transition: opacity 180ms ease, transform 180ms ease;
+}
+.notif-popup.open {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+}
+
+.notif-popup h4 {
+    margin: 6px 0 10px 6px;
+    color: var(--accent-color);
+    font-size: 0.95em;
+}
+
+.notif-item {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    padding: 8px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    transition: background 0.12s ease;
+}
+
+.notif-item + .notif-item { margin-top: 8px; }
+
+.notif-item:hover { background: rgba(255,255,255,0.02); }
+
+.notif-item .avatar { width: 40px; height: 40px; border-radius: 50%; overflow: hidden; display: inline-flex; align-items:center; justify-content:center; background:#0d1318; }
+.notif-item .meta { flex: 1; min-width:0; }
+.notif-item .meta .name { color: var(--text-color); font-weight:600; }
+.notif-item .meta .subtitle { color: var(--text-secondary); font-size:0.85em; }
+.notif-item .actions { display:flex; gap:8px; }
+.notif-item .actions .action-btn { padding:6px 8px; font-size:0.85em; }
+
 .auth-btn {
     background: transparent;
     border: 1px solid #2a3a4a;
@@ -834,54 +923,238 @@ animation: trophy-pulse 0.6s ease-in-out infinite;
 
 .friend-item,
 .friend-request {
-    background: #0b1418;
-    border: 1px solid #1b2a34;
-    padding: 8px;
+    /* reuse achievement-card style for friends list */
+    background: linear-gradient(135deg, #232f3b 0%, #1b2632 100%);
+    border: 1px solid #2a3a4a;
+    border-left: 3px solid transparent;
+    padding: 12px 14px;
     display: flex;
-    gap: 8px;
+    gap: 12px;
     align-items: center;
     margin-bottom: 8px;
-    border-radius: 6px;
+    border-radius: 3px;
     cursor: pointer;
+    transition: all 0.25s ease;
+    position: relative;
+    overflow: hidden;
 }
 
-.friend-avatar img {
-    width: 40px;
-    height: 40px;
+.friend-item:hover,
+.friend-request:hover {
+    background: linear-gradient(135deg, #2a3a4a 0%, #232f3b 100%);
+    border-color: var(--accent-color);
+    transform: translateY(-4px);
+    box-shadow: 0 6px 18px rgba(26,159,255,0.12);
+}
+
+.friend-avatar img,
+.friend-avatar {
+    width: 48px;
+    height: 48px;
     border-radius: 50%;
+    background: transparent;
+    display: inline-block;
+    flex-shrink: 0;
+    border: 2px solid rgba(255,255,255,0.03);
 }
 
 .friend-meta {
     flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.friend-meta .name {
+    color: var(--text-color);
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.friend-meta .small {
+    color: var(--text-secondary);
+    font-size: 0.85em;
+}
+
+.friend-points {
+    color: var(--warning-color);
+    font-weight: 800;
+    margin-left: 12px;
+    font-size: 0.95em;
+    text-shadow: 0 1px 0 rgba(0,0,0,0.6);
+}
+
+.friend-item .meta-right {
+    display:flex; align-items:center; gap:8px; margin-left:auto; white-space:nowrap;
 }
 
 .friend-actions {
     display: flex;
-    gap: 6px;
+    gap: 8px;
+}
+
+.friend-actions .action-btn {
+    padding: 6px 10px;
+    font-size: 0.85em;
 }
 
 .friend-request .request-actions {
     margin-left: auto;
     display: flex;
-    gap: 6px;
+    gap: 8px;
+}
+
+.btn-accept {
+    background: linear-gradient(90deg, #6ba539, #89c24b);
+    color: #08100a;
+    border: none;
+}
+
+.btn-decline {
+    background: transparent;
+    color: var(--text-secondary);
+    border: 1px solid #2a3a4a;
 }
 
 .friend-achievements-grid {
-    display: grid;
-    gap: 6px;
-    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    /* Use flex so we can control visual order with `order` per rarity */
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: flex-start;
 }
 
+/* Reduced achievement card for friend profile to match main style */
 .friend-achieved-item {
-    background: #071218;
-    padding: 6px 8px;
+    background: linear-gradient(135deg, #232f3b 0%, #1b2632 100%);
+    border: 1px solid #2a3a4a;
+    padding: 10px 12px;
+    border-left: 4px solid transparent;
     border-radius: 4px;
-    border: 1px solid #19303a;
+    color: var(--text-color);
+    min-width: 160px;
+    max-width: 260px;
+    font-size: 0.9em;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.friend-achieved-item:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 6px 18px rgba(0,0,0,0.45);
+}
+
+.friend-achieved-item .fa-icon,
+.friend-achieved-item .icon {
+    font-size: 1.2em;
+    flex-shrink: 0;
+}
+
+.friend-achieved-item .emoji {
+    font-size: 1.4em;
+    width: 34px;
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.friend-achieved-item .title {
+    font-weight: 600;
+    color: var(--text-color);
+}
+
+.friend-achieved-item .points {
+    margin-left: auto;
+    color: var(--warning-color);
+    font-weight: 700;
+    font-size: 0.85em;
+}
+
+/* Rarity colors (match main achievement border-left colors) */
+.friend-achieved-item.comum { border-left-color: var(--comum); order: 5; }
+.friend-achieved-item.incomum { border-left-color: var(--incomum); order: 4; }
+.friend-achieved-item.raro { border-left-color: var(--raro); order: 3; }
+.friend-achieved-item.épico { border-left-color: var(--épico); order: 2; }
+.friend-achieved-item.lendário { border-left-color: var(--lendário); order: 1; }
+
+/* Locked appearance fallback */
+.friend-achieved-item.locked {
+    opacity: 0.6;
+    filter: grayscale(60%);
+}
+
+/* Area badge inside compact friend achievement */
+.friend-achieved-item .meta {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.friend-achieved-item .area-badge {
+    font-size: 0.75em;
+    color: var(--text-secondary);
+    background: rgba(255,255,255,0.02);
+    padding: 3px 8px;
+    border-radius: 6px;
+    border: 1px solid rgba(42,58,74,0.15);
+    display: inline-block;
+    text-transform: none;
+}
+
+.friend-achieved-item .points {
+    margin-left: auto;
+}
+
+/* Shine effects for rarer friend achievements (matching main cards) */
+.friend-achieved-item.raro::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.08), transparent);
+    animation: shine 3s infinite;
+    pointer-events: none;
+}
+
+.friend-achieved-item.épico::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.25), transparent);
+    animation: shine 2.5s infinite;
+    pointer-events: none;
+}
+
+.friend-achieved-item.lendário::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(212, 175, 55, 0.35), transparent);
+    animation: shine 2s infinite;
+    pointer-events: none;
 }
 
 /* Friends page (separate full page) */
 .friends-page {
-    background: linear-gradient(180deg, #0a0e12 0%, #0e1218 100%);
+    /* Match main section gradient for visual consistency */
+    background: linear-gradient(180deg, #232f3b 0%, #1b2632 100%);
+    border-bottom: 1px solid #2a3a4a;
     min-height: calc(100vh - 120px);
     display: flex;
     flex-direction: column;
@@ -895,45 +1168,88 @@ animation: trophy-pulse 0.6s ease-in-out infinite;
 
 .friends-page-header h2 {
     color: var(--accent-color);
-    font-size: 1.8em;
+    font-size: 1.6em;
     margin: 0;
 }
 
 .friends-page-container {
     display: grid;
-    grid-template-columns: 1fr 320px;
+    /* use proportional columns so layout scales fluidly */
+    grid-template-columns: 1fr 1.6fr;
     gap: 16px;
     padding: 16px;
     flex: 1;
 }
 
-.friends-search-section {
-    background: #1a2630;
-    border: 1px solid #2a3a4a;
-    border-radius: 6px;
+.friends-search-section,
+.friends-requests-section,
+.friend-profile-section {
+    background: linear-gradient(180deg, #232f3b 0%, #1b2632 100%);
+    box-shadow: 0 2px 6px rgba(0,0,0,0.5);
     padding: 16px;
 }
 
-.friends-search-section h3 {
+.friends-search-section h3,
+.friends-requests-section h3,
+.friend-profile-section h3 {
     color: var(--accent-color);
     margin: 0 0 12px 0;
-    font-size: 1.1em;
+    font-size: 1.05em;
 }
 
 .friend-search {
     display: flex;
     gap: 8px;
-    margin-bottom: 16px;
+    margin-bottom: 12px;
+}
+
+.search-input-wrap {
+    position: relative;
+    flex: 1;
+}
+
+.search-input-wrap .search-icon {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted);
+    font-size: 1em;
+    pointer-events: none;
+}
+
+/* Reset search input styling and build simple, clean bar */
+.search-input-wrap input#friendSearch {
+    width: 100%;
+    padding: 16px 22px 16px 4%; /* space for left icon */
+    border-radius: 6px;
+    background: #101e29;
+    border: 1px solid #2a3a4a;
+    box-shadow: none;
+    transition: border-color 0.12s ease, box-shadow 0.12s ease;
+    color: var(--text-color);
+    font-size: 0.95em;
+}
+
+.search-input-wrap input#friendSearch::placeholder {
+    color: var(--text-muted);
+}
+
+.search-input-wrap input#friendSearch:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 8px rgba(26,159,255,0.12);
 }
 
 .friend-search input {
     flex: 1;
-    padding: 10px;
-    background: #0d1318;
-    border: 1px solid #2a3a4a;
-    border-radius: 4px;
+    padding: 10px 12px;
+    background: linear-gradient(180deg, #0f2228 0%, #08141a 100%);
+    border: 1px solid rgba(255,255,255,0.03);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.02);
+    border-radius: 6px;
     color: var(--text-color);
-    font-size: 1em;
+    font-size: 0.98em;
 }
 
 .friend-search input::placeholder {
@@ -943,23 +1259,19 @@ animation: trophy-pulse 0.6s ease-in-out infinite;
 .friend-search input:focus {
     outline: none;
     border-color: var(--accent-color);
-    box-shadow: 0 0 8px rgba(26, 159, 255, 0.3);
+    box-shadow: 0 0 8px rgba(26, 159, 255, 0.18);
 }
+
+/* search button removed — Enter triggers search now */
 
 .friend-search-hint {
     color: var(--text-muted);
     margin-top: 8px;
     font-size: 0.9em;
-    cursor: pointer;
-}
-
-.friend-search-hint:hover {
-    color: var(--text-color);
-    text-decoration: underline;
 }
 
 .friends-list-container {
-    max-height: 500px;
+    max-height: 520px;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
@@ -975,45 +1287,31 @@ animation: trophy-pulse 0.6s ease-in-out infinite;
     color: white;
     border: none;
     padding: 8px 10px;
+    border-radius: 4px;
 }
 
 .friends-requests-section {
-    background: #1a2630;
-    border: 1px solid #2a3a4a;
-    border-radius: 6px;
-    padding: 16px;
-    max-height: 400px;
+    max-height: 420px;
     overflow-y: auto;
 }
 
-.friends-requests-section h3 {
-    color: var(--accent-color);
-    margin: 0 0 12px 0;
-    font-size: 1.1em;
-}
-
 .friend-profile-section {
-    background: #1a2630;
-    border: 1px solid #2a3a4a;
-    border-radius: 6px;
-    padding: 16px;
-    grid-column: 1 / -1;
+    grid-column: auto; /* allow this section to occupy the second column in the grid */
+    align-self: start;
 }
 
 .friend-profile-section h3 {
-    color: var(--accent-color);
-    margin: 0 0 16px 0;
-    font-size: 1.1em;
+    margin: 0 0 12px 0;
 }
 
 #friendProfileContent {
-    min-height: 200px;
+    min-height: 160px;
 }
 
 .friend-header {
     display: flex;
     gap: 12px;
-    margin-bottom: 16px;
+    margin-bottom: 12px;
     padding-bottom: 12px;
     border-bottom: 1px solid #2a3a4a;
 }
@@ -1029,7 +1327,7 @@ animation: trophy-pulse 0.6s ease-in-out infinite;
 
 .friend-header strong {
     color: var(--accent-color);
-    font-size: 1.1em;
+    font-size: 1.05em;
 }
 
 .friend-header div {
@@ -1059,4 +1357,28 @@ animation: trophy-pulse 0.6s ease-in-out infinite;
     padding: 18px;
     color: var(--text-muted);
     font-style: italic;
+}
+
+/* Responsive: stack columns on small screens */
+@media (max-width: 900px) {
+    .friends-page-container {
+        grid-template-columns: 1fr;
+        padding: 12px;
+    }
+
+    .friend-profile-section {
+        grid-column: auto;
+        margin-top: 12px;
+    }
+
+    .friends-columns {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Wider screens: slightly emphasize profile column when very large */
+@media (min-width: 1600px) {
+    .friends-page-container {
+        grid-template-columns: 1fr 1.8fr; /* profile more emphasized on very wide screens */
+    }
 }
