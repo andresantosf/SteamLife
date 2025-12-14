@@ -48,13 +48,6 @@ jobs:
         # Show current root files for debugging (will not show file contents)
         ls -la
 
-    - name: Deploy to GitHub Pages
-      uses: peaceiris/actions-gh-pages@v3
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: public/
-        cname: # optional: add your custom domain here
-
     - name: Prepare public folder for publish
       run: |
         echo "Preparing public/ folder for deployment"
@@ -69,3 +62,10 @@ jobs:
         fi
         echo "Public folder size:"
         du -sh public || true
+
+    - name: Deploy to GitHub Pages
+      uses: peaceiris/actions-gh-pages@v3
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        publish_dir: public/
+        cname: # optional: add your custom domain here
