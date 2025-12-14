@@ -2,10 +2,10 @@
     "achievements": [
         {
             "areaId": 1,
-            "name": "Primeira Série",
+            "name": "Frangolino",
             "description": "Faça seu primeiro treino na academia",
             "points": 10,
-            "icon": "💪",
+            "icon": "🐤",
             "rarity": "comum",
             "unlocked": false
         },
@@ -15,6 +15,7 @@
             "name": "Constância Inicial",
             "description": "Treine por 3 dias seguidos",
             "points": 15,
+            "repeat": 3,
             "icon": "🔥",
             "rarity": "comum",
             "unlocked": false
@@ -25,6 +26,7 @@
             "description": "Complete 7 dias seguidos de treino",
             "points": 25,
             "icon": "✅",
+            "repeat": 7,
             "rarity": "comum",
             "unlocked": false
         },
@@ -34,6 +36,7 @@
             "description": "Complete 10 treinos e construa o hábito do exercício",
             "points": 50,
             "icon": "💪",
+            "repeat": 10,
             "rarity": "comum",
             "unlocked": false
         },
@@ -52,6 +55,7 @@
             "description": "Complete 10 treinos de cardio",
             "points": 75,
             "icon": "💓",
+            "repeat": 10,
             "rarity": "incomum",
             "unlocked": false
         },
@@ -62,6 +66,7 @@
             "description": "Faça 10 minutos de aquecimento por 5 treinos seguidos",
             "points": 20,
             "icon": "♨️",
+            "repeat": 5,
             "rarity": "comum",
             "unlocked": false
         },
@@ -91,6 +96,7 @@
             "name": "Treino Duplo",
             "description": "Faça dois treinos no mesmo dia",
             "points": 70,
+            "repeat": 2,
             "icon": "⚡",
             "rarity": "raro",
             "unlocked": false
@@ -120,6 +126,7 @@
             "areaId": 1,
             "name": "Imparável",
             "description": "Complete 180 dias de treino acumulados",
+            "repeat": 180,
             "points": 300,
             "icon": "👑",
             "rarity": "lendário",
@@ -146,7 +153,7 @@
         {
             "areaId": 2,
             "name": "Primeira Classe",
-            "description": "Attend sua primeira aula",
+            "description": "Tenha sua primeira aula",
             "points": 10,
             "icon": "📚",
             "rarity": "comum",
@@ -176,6 +183,7 @@
             "description": "Complete 5 exercícios para o mesmo grupo muscular em um único treino!",
             "points": 75,
             "icon": "💪",
+            "repeat": 5,
             "rarity": "incomum",
             "unlocked": false
         },
@@ -210,6 +218,7 @@
             "areaId": 1,
             "name": "Projeto Verão",
             "description": "Complete 60 dias de treino",
+            "repeat": 60,
             "points": 75,
             "icon": "☀️",
             "rarity": "raro",
@@ -219,6 +228,7 @@
             "areaId": 1,
             "name": "No Pain",
             "description": "Treine 3 dias seguidos mesmo com dor muscular",
+            "repeat": 3,
             "points": 35,
             "icon": "😤",
             "rarity": "raro",
@@ -282,6 +292,7 @@
             "areaId": 1,
             "name": "Veterano",
             "description": "Alcance 100 treinos",
+            "repeat": 100,
             "points": 120,
             "icon": "🎖️",
             "rarity": "épico",
@@ -291,6 +302,7 @@
             "areaId": 1,
             "name": "Sem Skip Leg Day",
             "description": "Faça 10 treinos de perna",
+            "repeat": 10,
             "points": 70,
             "icon": "🦿",
             "rarity": "épico",
@@ -300,6 +312,7 @@
             "areaId": 1,
             "name": "Maratonista do Hábito",
             "description": "Complete 30 dias consecutivos de treino sem faltar um único dia.",
+            "repeat": 30,
             "points": 200,
             "icon": "🏃‍♂️",
             "rarity": "épico",
@@ -345,6 +358,7 @@
             "areaId": 1,
             "name": "Disciplina Total",
             "description": "Treine por 90 dias sem pausas longas",
+            "repeat": 90,
             "points": 150,
             "icon": "🧠",
             "rarity": "lendário",
@@ -354,9 +368,200 @@
             "areaId": 1,
             "name": "Guerreiro Lendário",
             "description": "Complete 365 dias de treino acumulados",
+            "repeat": 365,
             "points": 365,
             "icon": "💪",
             "rarity": "lendário",
+            "unlocked": false
+        },
+        {
+            "areaId": 1,
+            "name": "Dupla Diária",
+            "description": "Complete dois treinos por dia por 3 dias seguidos",
+            "repeat": 3,
+            "points": 90,
+            "icon": "⚡",
+            "rarity": "raro",
+            "unlocked": false
+        },
+        {
+            "areaId": 1,
+            "name": "Consistência Pro",
+            "description": "Acumule 90 dias de treino no total",
+            "repeat": 90,
+            "points": 180,
+            "icon": "🏅",
+            "rarity": "épico",
+            "unlocked": false
+        },
+        {
+            "areaId": 1,
+            "name": "Série Imbatível",
+            "description": "Complete 30 dias seguidos sem faltar um único treino",
+            "repeat": 30,
+            "points": 140,
+            "icon": "🔥",
+            "rarity": "épico",
+            "unlocked": false
+        },
+        {
+            "areaId": 1,
+            "name": "Maratona Noturna",
+            "description": "Faça um treino contínuo de 3 horas",
+            "points": 200,
+            "icon": "🌙",
+            "rarity": "lendário",
+            "unlocked": false
+        },
+        {
+            "areaId": 2,
+            "name": "Maratona de Estudos",
+            "description": "Estude por 5 horas seguidas para uma prova",
+            "points": 40,
+            "icon": "📘",
+            "rarity": "comum",
+            "unlocked": false
+        },
+        {
+            "areaId": 2,
+            "name": "Trabalho de Ouro",
+            "description": "Entregue um trabalho com avaliações máximas",
+            "points": 80,
+            "icon": "🏅",
+            "rarity": "raro",
+            "unlocked": false
+        },
+        {
+            "areaId": 2,
+            "name": "Noite de Estudo",
+            "description": "Estude 7 dias seguidos para uma prova importante",
+            "repeat": 7,
+            "points": 70,
+            "icon": "🌙",
+            "rarity": "raro",
+            "unlocked": false
+        },
+        {
+            "areaId": 3,
+            "name": "Primeiro Projeto",
+            "description": "Conclua seu primeiro grande projeto com sucesso",
+            "points": 60,
+            "icon": "🛠️",
+            "rarity": "comum",
+            "unlocked": false
+        },
+        {
+            "areaId": 3,
+            "name": "Líder de Equipe",
+            "description": "Lidere uma equipe em um projeto bem-sucedido",
+            "points": 120,
+            "icon": "👥",
+            "rarity": "épico",
+            "unlocked": false
+        },
+        {
+            "areaId": 4,
+            "name": "Maratona de Reuniões",
+            "description": "Participe de 5 reuniões produtivas em um dia",
+            "repeat": 5,
+            "points": 35,
+            "icon": "📅",
+            "rarity": "comum",
+            "unlocked": false
+        },
+        {
+            "areaId": 4,
+            "name": "Meta Batida",
+            "description": "Alcance 150% da sua meta mensal",
+            "points": 150,
+            "icon": "📈",
+            "rarity": "épico",
+            "unlocked": false
+        },
+        {
+            "areaId": 5,
+            "name": "Explorador",
+            "description": "Visite 10 lugares novos na sua cidade",
+            "repeat": 10,
+            "points": 45,
+            "icon": "🗺️",
+            "rarity": "incomum",
+            "unlocked": false
+        },
+        {
+            "areaId": 5,
+            "name": "Fotógrafo",
+            "description": "Tire 50 fotos e organize um álbum",
+            "repeat": 50,
+            "points": 60,
+            "icon": "📸",
+            "rarity": "raro",
+            "unlocked": false
+        },
+        {
+            "areaId": 6,
+            "name": "Primeira Exposição",
+            "description": "Mostre uma obra em uma galeria local",
+            "points": 100,
+            "icon": "🖼️",
+            "rarity": "épico",
+            "unlocked": false
+        },
+        {
+            "areaId": 6,
+            "name": "Jam Session",
+            "description": "Toque com outros músicos ao vivo",
+            "points": 40,
+            "icon": "🎶",
+            "rarity": "incomum",
+            "unlocked": false
+        },
+        {
+            "areaId": 1,
+            "name": "Ciclo Perfeito",
+            "description": "Pedale 100km acumulados",
+            "points": 220,
+            "icon": "🚴",
+            "rarity": "lendário",
+            "unlocked": false
+        },
+        {
+            "areaId": 1,
+            "name": "Sprint King",
+            "description": "Complete 50 sprints de alta intensidade",
+            "repeat": 50,
+            "points": 95,
+            "icon": "🏃‍♂️",
+            "rarity": "raro",
+            "unlocked": false
+        },
+        {
+            "areaId": 1,
+            "name": "Plank Champ",
+            "description": "Segure prancha por 10 minutos",
+            "points": 80,
+            "icon": "🧘",
+            "rarity": "incomum",
+            "unlocked": false
+        },
+        {
+            "areaId": 1,
+            "name": "Descanse amigo",
+            "description": "Complete 30 sessões de recuperação ativa (alongamento, mobilidade)",
+            "repeat": 30,
+            "points": 50,
+            "icon": "🛀",
+            "rarity": "comum",
+            "unlocked": false
+        },
+        {
+            "areaId": 1,
+            "name": "Whey de 1 kg",
+            "description": "Mantenha diário de alimentação por 60 dias",
+            "repeat": 60,
+            "points": 85,
+            "icon": "🍗",
+            "rarity": "incomum",
             "unlocked": false
         }
     ]
