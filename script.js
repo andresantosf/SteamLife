@@ -12,6 +12,8 @@ class AchievementManager {
         this.dataVersion = null;
         this.currentUser = null;
         this.saveTimeout = null;
+        this._friendPopupRequestCounter = 0;
+        this.activeRarities = new Set();
         this.init();
     }
 
@@ -22,8 +24,43 @@ class AchievementManager {
         this.setupFriendsListeners();
         this.setupNameModal();
         this.setupNotifications();
+        // create hover popup element used to preview full achievement card
+        this.createAchievementHoverPopup();
+        // create friend hover popup
+        this.createFriendHoverPopup();
         this.renderAreas();
+        // hook rarity legend after areas rendered
+        this.setupRarityFilterListeners();
+        // setup achievement search input
+        this.searchQuery = '';
+        this.setupAchievementSearch();
         this.selectArea(null);
+    }
+
+    setupAchievementSearch() {
+        const input = document.getElementById('achievementSearch');
+        const clearBtn = document.getElementById('clearAchievementSearch');
+        if (input) {
+            input.addEventListener('input', (e) => {
+                this.searchQuery = (e.target.value || '').trim().toLowerCase();
+                this.render();
+            });
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    input.value = '';
+                    this.searchQuery = '';
+                    this.render();
+                }
+            });
+        }
+        if (clearBtn) {
+            clearBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (input) input.value = '';
+                this.searchQuery = '';
+                this.render();
+            });
+        }
     }
 
     async loadData() {
@@ -204,29 +241,19 @@ class AchievementManager {
 
 
 
-        // Auth state observer
+        // Auth state observer — use initial callback to decide whether to prompt login
         if (window.firebaseService && window.firebaseService.onAuthStateChanged) {
-            window.firebaseService.onAuthStateChanged(user => this.handleAuthStateChange(user));
+            let _initialAuthCheck = true;
+            window.firebaseService.onAuthStateChanged(user => {
+                this.handleAuthStateChange(user);
+                if (_initialAuthCheck) {
+                    _initialAuthCheck = false;
+                    if (!user) {
+                        if (loginModal) loginModal.classList.remove('hidden');
+                    }
+                }
+            });
         }
-
-        // Prompt login on start if user is not authenticated (small delay for SDK init)
-        setTimeout(() => {
-            try {
-                let current = null;
-                if (window.firebaseService && typeof window.firebaseService.getCurrentUser === 'function') {
-                    current = window.firebaseService.getCurrentUser();
-                } else if (window.firebaseService && window.firebaseService.auth && window.firebaseService.auth.currentUser) {
-                    current = window.firebaseService.auth.currentUser;
-                } else if (window.firebase && firebase.auth) {
-                    current = firebase.auth().currentUser;
-                }
-                if (!current) {
-                    if (loginModal) loginModal.classList.remove('hidden');
-                }
-            } catch (e) {
-                // ignore
-            }
-        }, 500);
     }
 
     async handleAuthStateChange(user) {
@@ -521,6 +548,8 @@ class AchievementManager {
             // delegating add-button click to searchResultsEl handler
             el.appendChild(item);
         }
+        // wire hover listeners for newly rendered friend items
+        this.setupFriendHoverListeners();
     }
 
     async handleSendFriendRequest(toUid, addBtn = null) {
@@ -948,6 +977,8 @@ class AchievementManager {
             // update search results UI if any
             const sr = document.getElementById('searchResults');
             if (sr && sr.children.length) this.renderFriendSearchResults(this.lastSearchResults);
+            // attach hover listeners for friend items
+            this.setupFriendHoverListeners();
         } catch (err) {
             console.error('fetchFriends', err);
         }
@@ -1015,7 +1046,7 @@ class AchievementManager {
                 const areaObj = this.areas.find(ar => ar.id === a.areaId || String(ar.id) === String(a.areaId));
                 const areaName = areaObj ? areaObj.name : '';
 
-                html += `<div class="friend-achieved-item ${rarityClass}${lockedClass}">
+                html += `<div class="friend-achieved-item ${rarityClass}${lockedClass}" data-id="${a.id}" tabindex="0">
                             <div class="emoji">${icon}</div>
                             <div class="meta">
                                 <div class="title">${a.name}</div>
@@ -1027,6 +1058,18 @@ class AchievementManager {
 
             html += `</div>`;
             container.innerHTML = html;
+            // Attach hover/focus listeners to each friend achievement item to show full popup
+            const profileItems = container.querySelectorAll('.friend-achieved-item');
+            profileItems.forEach(pi => {
+                const aid = parseInt(pi.dataset.id);
+                const ach = this.achievements.find(x => x.id === aid);
+                if (!ach) return;
+                pi.addEventListener('mouseenter', (e) => this.showAchievementPopup(e, ach, pi));
+                pi.addEventListener('mousemove', (e) => this.positionAchievementPopup(e, pi));
+                pi.addEventListener('mouseleave', () => this.hideAchievementPopup());
+                pi.addEventListener('focus', (e) => this.showAchievementPopup(e, ach, pi));
+                pi.addEventListener('blur', () => this.hideAchievementPopup());
+            });
         } catch (err) {
             console.error('viewFriendProfile', err);
             // handle unauthenticated specially
@@ -1107,6 +1150,8 @@ class AchievementManager {
             </span>
         `;
         allAreasBtn.addEventListener('click', () => this.selectArea(null));
+        // set active state according to currentAreaId
+        if (this.currentAreaId === null) allAreasBtn.classList.add('active');
         nav.appendChild(allAreasBtn);
 
         // Botões das áreas
@@ -1125,7 +1170,43 @@ class AchievementManager {
                 </span>
             `;
             btn.addEventListener('click', () => this.selectArea(area.id));
+            // apply active class if this area is currently selected
+            if (this.currentAreaId !== null && parseInt(this.currentAreaId) === parseInt(area.id)) {
+                btn.classList.add('active');
+            }
             nav.appendChild(btn);
+        });
+    }
+
+    setupRarityFilterListeners() {
+        const items = document.querySelectorAll('.progress-legend .legend-item');
+        if (!items || items.length === 0) return;
+        const known = ['comum','incomum','raro','épico','lendário'];
+        items.forEach(item => {
+            // Detect rarity class from inner color element
+            const colorEl = item.querySelector('.legend-color');
+            if (!colorEl) return;
+            const rarity = Array.from(colorEl.classList).find(c => known.includes(c));
+            if (!rarity) return;
+            // setup cursor and aria
+            item.style.cursor = 'pointer';
+            item.setAttribute('role','button');
+            item.setAttribute('aria-pressed', this.activeRarities.has(rarity) ? 'true' : 'false');
+            // click toggles
+            item.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (this.activeRarities.has(rarity)) {
+                    this.activeRarities.delete(rarity);
+                    item.classList.remove('active');
+                    item.setAttribute('aria-pressed','false');
+                } else {
+                    this.activeRarities.add(rarity);
+                    item.classList.add('active');
+                    item.setAttribute('aria-pressed','true');
+                }
+                // Re-render achievements with new rarity filters
+                this.render();
+            });
         });
     }
 
@@ -1174,13 +1255,24 @@ class AchievementManager {
     getFilteredAchievements() {
         let filtered = this.achievements;
 
-        // Filtrar por área
+        // Filtrar por área (single-area selection preserved)
         if (this.currentAreaId !== null) {
-            console.log('Filtrando por areaId:', this.currentAreaId);
-            console.log('Total de achievements:', filtered.length);
             filtered = filtered.filter(a => a.areaId === parseInt(this.currentAreaId));
-            console.log('Achievements após filtrar por área:', filtered.length);
         }
+
+        // Filtrar por raridade (multi-select via legend). If none selected, do not filter by rarity.
+        if (this.activeRarities && this.activeRarities.size > 0) {
+            filtered = filtered.filter(a => {
+                const r = (a.rarity || '').toLowerCase();
+                return this.activeRarities.has(r);
+            });
+        }
+
+            // Filtrar por nome (pesquisa)
+            if (this.searchQuery && this.searchQuery.length > 0) {
+                const q = this.searchQuery.toLowerCase();
+                filtered = filtered.filter(a => (a.name || '').toLowerCase().indexOf(q) !== -1);
+            }
 
         // Filtrar por status
         if (this.currentFilter === 'desbloqueadas') {
@@ -1208,7 +1300,248 @@ class AchievementManager {
                     this.toggleAchievement(achievement);
                 }
             });
+            // show popup on hover
+            card.addEventListener('mouseenter', (e) => {
+                const achievementId = parseInt(card.dataset.id);
+                const achievement = this.achievements.find(a => a.id === achievementId);
+                if (achievement) this.showAchievementPopup(e, achievement, card);
+            });
+            card.addEventListener('mousemove', (e) => {
+                this.positionAchievementPopup(e);
+            });
+            card.addEventListener('mouseleave', () => {
+                this.hideAchievementPopup();
+            });
+            // keyboard accessibility: focus/blur
+            card.addEventListener('focus', (e) => {
+                const achievementId = parseInt(card.dataset.id);
+                const achievement = this.achievements.find(a => a.id === achievementId);
+                if (achievement) this.showAchievementPopup(e, achievement, card);
+            });
+            card.addEventListener('blur', () => this.hideAchievementPopup());
         });
+    }
+
+    createAchievementHoverPopup() {
+        if (this._achievementPopup) return;
+        const popup = document.createElement('div');
+        popup.id = 'achievementPopup';
+        popup.className = 'achievement-popup hidden';
+        popup.setAttribute('aria-hidden', 'true');
+        document.body.appendChild(popup);
+        this._achievementPopup = popup;
+    }
+
+    /* Friend popup (shows public/profile summary + a small achievements preview) */
+    createFriendHoverPopup() {
+        if (this._friendPopup) return;
+        const popup = document.createElement('div');
+        popup.id = 'friendPopup';
+        popup.className = 'friend-popup hidden';
+        popup.setAttribute('aria-hidden', 'true');
+        document.body.appendChild(popup);
+        this._friendPopup = popup;
+    }
+
+    async showFriendPopup(event, uid, sourceEl, requestId) {
+        const popup = this._friendPopup;
+        if (!popup) return;
+        // If requestId not provided, try to read from sourceEl
+        if (!requestId && sourceEl) requestId = sourceEl._friendPopupRequestId;
+        // try to fetch full friend profile (may require auth). fallback to public profile.
+        let profile = null;
+        try {
+            if (window.firebaseService && window.firebaseService.getFriendProfile) {
+                const res = await window.firebaseService.getFriendProfile(uid);
+                // if user moved away while we awaited, abort
+                if (sourceEl && sourceEl._friendPopupRequestId !== requestId) return;
+                if (res && res.success && res.profile) profile = res.profile;
+            }
+        } catch (err) {
+            // ignore — fallback to public
+        }
+        // check again after any async fallback
+        if (sourceEl && sourceEl._friendPopupRequestId !== requestId) return;
+        if (!profile) {
+            try {
+                if (window.firebaseService && window.firebaseService.getPublicProfile) {
+                    profile = await window.firebaseService.getPublicProfile(uid) || {};
+                    if (sourceEl && sourceEl._friendPopupRequestId !== requestId) return;
+                }
+            } catch (e) {
+                profile = {};
+            }
+        }
+
+        const displayName = profile.displayName || profile.name || 'Sem nome';
+        const points = profile.totalPoints || 0;
+        const unlockedIds = Array.isArray(profile.unlockedIds) ? profile.unlockedIds : [];
+
+        // Build achievements preview (limit to 8)
+        const unlockedSet = new Set(unlockedIds);
+        const preview = this.achievements.filter(a => unlockedSet.has(a.id)).slice(0, 8);
+
+        let achHtml = '';
+        if (preview.length === 0) achHtml = '<div class="friend-empty small">Nenhuma conquista pública</div>';
+        else {
+            achHtml = '<div class="friend-achievements-preview">';
+            for (const a of preview) {
+                achHtml += `<div class="friend-ach-preview ${a.rarity}"><div class="icon">${a.icon || '🎖️'}</div><div class="t">${a.name}</div></div>`;
+            }
+            achHtml += '</div>';
+        }
+
+        popup.innerHTML = `
+            <div class="friend-popup-inner">
+                <div class="friend-popup-header">
+                    <div class="friend-popup-avatar">${profile.photoURL ? `<img src="${profile.photoURL}" alt="${displayName}">` : '👤'}</div>
+                    <div class="friend-popup-meta">
+                        <div class="friend-popup-name">${displayName}</div>
+                        <div class="friend-popup-points">+${points} pts</div>
+                    </div>
+                </div>
+                <div class="friend-popup-body">
+                    ${achHtml}
+                </div>
+            </div>
+        `;
+
+        popup.classList.remove('hidden');
+        popup.classList.add('open');
+        popup.setAttribute('aria-hidden', 'false');
+        // position near source
+        this.positionGenericPopup(popup, event, sourceEl);
+    }
+
+    positionGenericPopup(popup, event, sourceEl) {
+        if (!popup) return;
+        popup.style.left = '-9999px';
+        popup.style.top = '-9999px';
+        const rect = sourceEl ? sourceEl.getBoundingClientRect() : (event && event.currentTarget && event.currentTarget.getBoundingClientRect ? event.currentTarget.getBoundingClientRect() : null);
+        let x = 0, y = 0;
+        if (event && typeof event.clientX === 'number') {
+            x = event.clientX;
+            y = event.clientY;
+        } else if (rect) {
+            x = rect.right;
+            y = rect.top + rect.height / 4;
+        }
+        const popupRect = popup.getBoundingClientRect();
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+        let left = x + 12;
+        let top = y + 12;
+        if (left + popupRect.width > vw - 8) left = x - popupRect.width - 12;
+        if (top + popupRect.height > vh - 8) top = y - popupRect.height - 12;
+        if (top < 8) top = 8;
+        if (left < 8) left = 8;
+        popup.style.left = `${Math.round(left)}px`;
+        popup.style.top = `${Math.round(top)}px`;
+    }
+
+    hideFriendPopup() {
+        const popup = this._friendPopup;
+        if (!popup) return;
+        popup.classList.remove('open');
+        popup.classList.add('hidden');
+        popup.setAttribute('aria-hidden', 'true');
+    }
+
+    setupFriendHoverListeners() {
+        const els = document.querySelectorAll('.friend-item');
+        if (!els || els.length === 0) return;
+        els.forEach(el => {
+            // avoid binding multiple times
+            if (el._hoverBound) return;
+            el._hoverBound = true;
+            el.addEventListener('mouseenter', (e) => {
+                const uid = el.dataset.uid;
+                if (!uid) return;
+                // increment request id to represent latest hover
+                this._friendPopupRequestCounter = (this._friendPopupRequestCounter || 0) + 1;
+                el._friendPopupRequestId = this._friendPopupRequestCounter;
+                this.showFriendPopup(e, uid, el, el._friendPopupRequestId);
+            });
+            el.addEventListener('mousemove', (e) => {
+                const popup = this._friendPopup;
+                if (popup && popup.classList.contains('open')) this.positionGenericPopup(popup, e, el);
+            });
+            el.addEventListener('mouseleave', () => {
+                // invalidate pending requests for this element
+                el._friendPopupRequestId = null;
+                this.hideFriendPopup();
+            });
+            el.addEventListener('focus', (e) => {
+                const uid = el.dataset.uid;
+                if (!uid) return;
+                this._friendPopupRequestCounter = (this._friendPopupRequestCounter || 0) + 1;
+                el._friendPopupRequestId = this._friendPopupRequestCounter;
+                this.showFriendPopup(e, uid, el, el._friendPopupRequestId);
+            });
+            el.addEventListener('blur', () => this.hideFriendPopup());
+        });
+    }
+
+    showAchievementPopup(event, achievement, sourceEl) {
+        const popup = this._achievementPopup;
+        if (!popup) return;
+        const areaObj = this.areas.find(ar => ar.id === achievement.areaId || String(ar.id) === String(achievement.areaId));
+        const areaName = areaObj ? areaObj.name : '';
+        popup.innerHTML = `
+            <div class="popup-inner ${achievement.rarity}">
+                <div class="popup-icon">${achievement.icon || '🎖️'}</div>
+                <div class="popup-meta">
+                    <div class="popup-name">${achievement.name}</div>
+                    <div class="popup-area">${areaName}</div>
+                    <div class="popup-desc">${achievement.description || ''}</div>
+                    <div class="popup-footer">
+                        <div class="popup-points">+${achievement.points} pts</div>
+                        <div class="popup-status ${achievement.unlocked ? 'unlocked' : 'locked'}">${achievement.unlocked ? 'Desbloqueada' : 'Bloqueada'}</div>
+                    </div>
+                </div>
+            </div>
+        `;
+        popup.classList.remove('hidden');
+        popup.classList.add('open');
+        popup.setAttribute('aria-hidden', 'false');
+        // position relative to event or source element
+        this.positionAchievementPopup(event, sourceEl);
+    }
+
+    positionAchievementPopup(event, sourceEl) {
+        const popup = this._achievementPopup;
+        if (!popup) return;
+        // ensure popup has been rendered so we can read size
+        popup.style.left = '-9999px';
+        popup.style.top = '-9999px';
+        const rect = sourceEl ? sourceEl.getBoundingClientRect() : (event.currentTarget && event.currentTarget.getBoundingClientRect ? event.currentTarget.getBoundingClientRect() : null);
+        let x = 0, y = 0;
+        if (event && typeof event.clientX === 'number') {
+            x = event.clientX;
+            y = event.clientY;
+        } else if (rect) {
+            x = rect.right;
+            y = rect.top + rect.height / 4;
+        }
+        const popupRect = popup.getBoundingClientRect();
+        const vw = window.innerWidth;
+        const vh = window.innerHeight;
+        let left = x + 12;
+        let top = y + 12;
+        if (left + popupRect.width > vw - 8) left = x - popupRect.width - 12;
+        if (top + popupRect.height > vh - 8) top = y - popupRect.height - 12;
+        if (top < 8) top = 8;
+        if (left < 8) left = 8;
+        popup.style.left = `${Math.round(left)}px`;
+        popup.style.top = `${Math.round(top)}px`;
+    }
+
+    hideAchievementPopup() {
+        const popup = this._achievementPopup;
+        if (!popup) return;
+        popup.classList.remove('open');
+        popup.classList.add('hidden');
+        popup.setAttribute('aria-hidden', 'true');
     }
 
     toggleAchievement(achievement) {
